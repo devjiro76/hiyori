@@ -1,0 +1,24 @@
+{
+  "identifier": "default",
+  "description": "Default capabilities for Hyori desktop mascot",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-start-resize-dragging",
+    "core:window:allow-set-always-on-top",
+    "core:window:allow-set-ignore-cursor-events",
+    "core:window:allow-set-size",
+    "core:event:default",
+    "shell:allow-execute",
+    "notification:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://**" },
+        { "url": "http://localhost:**" },
+        { "url": "http://127.0.0.1:**" }
+      ]
+    }
+  ]
+}

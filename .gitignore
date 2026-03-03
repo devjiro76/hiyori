@@ -1,0 +1,25 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.production
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# Live2D models (not redistributable)
+public/models/
+
+# Live2D Cubism Core SDK (proprietary)
+public/live2dcubismcore.min.js
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code
+.claude/
+
+# OS
+.DS_Store

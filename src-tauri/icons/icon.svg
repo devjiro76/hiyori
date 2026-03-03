@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFB6C1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF8FAB;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="hair" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#C4956A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A87D55;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="hairLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4A574;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B8895E;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bg)" />
+  <circle cx="256" cy="256" r="230" fill="#FFF5F7" opacity="0.3" />
+
+  <!-- Hair back (behind face) -->
+  <ellipse cx="256" cy="235" rx="145" ry="155" fill="url(#hair)" />
+
+  <!-- Left twintail -->
+  <path d="M135,200 Q105,250 100,330 Q95,380 115,410 Q130,395 125,340 Q120,290 145,240 Z" fill="url(#hairLight)" />
+  <path d="M130,195 Q95,245 88,335 Q83,390 108,420 Q85,385 90,330 Q95,250 128,200 Z" fill="#A07048" opacity="0.5" />
+
+  <!-- Right twintail -->
+  <path d="M377,200 Q407,250 412,330 Q417,380 397,410 Q382,395 387,340 Q392,290 367,240 Z" fill="url(#hairLight)" />
+  <path d="M382,195 Q417,245 424,335 Q429,390 404,420 Q427,385 422,330 Q417,250 384,200 Z" fill="#A07048" opacity="0.5" />
+
+  <!-- Face -->
+  <ellipse cx="256" cy="270" rx="105" ry="115" fill="#FFEEDD" />
+  <ellipse cx="256" cy="275" rx="100" ry="110" fill="#FFF0E0" />
+
+  <!-- Hair bangs (front) -->
+  <path d="M150,210 Q170,145 256,130 Q342,145 362,210 Q355,190 340,175 Q315,155 256,148 Q197,155 172,175 Q157,190 150,210 Z" fill="url(#hair)" />
+
+  <!-- Center bangs detail -->
+  <path d="M210,210 Q220,165 256,155 Q292,165 302,210 Q290,185 256,175 Q222,185 210,210 Z" fill="#B8895E" opacity="0.6" />
+
+  <!-- Side hair frames -->
+  <path d="M155,215 Q145,190 160,160 Q170,145 190,138 Q170,155 162,175 Q155,195 158,220 Z" fill="#B8895E" />
+  <path d="M357,215 Q367,190 352,160 Q342,145 322,138 Q342,155 350,175 Q357,195 354,220 Z" fill="#B8895E" />
+
+  <!-- Left red ribbon -->
+  <path d="M140,185 L120,165 L135,180 L125,195 Z" fill="#E8404F" />
+  <path d="M140,185 L155,165 L142,178 L152,195 Z" fill="#E8404F" />
+  <circle cx="140" cy="185" r="5" fill="#CC3344" />
+
+  <!-- Right red ribbon -->
+  <path d="M372,185 L392,165 L377,180 L387,195 Z" fill="#E8404F" />
+  <path d="M372,185 L357,165 L370,178 L360,195 Z" fill="#E8404F" />
+  <circle cx="372" cy="185" r="5" fill="#CC3344" />
+
+  <!-- Eyes -->
+  <!-- Left eye -->
+  <ellipse cx="220" cy="270" rx="22" ry="25" fill="white" />
+  <ellipse cx="222" cy="272" rx="16" ry="18" fill="#4A90D9" />
+  <ellipse cx="222" cy="275" rx="13" ry="14" fill="#3070B8" />
+  <circle cx="215" cy="264" r="5" fill="white" opacity="0.9" />
+  <circle cx="228" cy="278" r="3" fill="white" opacity="0.5" />
+  <ellipse cx="222" cy="280" rx="8" ry="6" fill="#1E4D8C" />
+
+  <!-- Right eye -->
+  <ellipse cx="292" cy="270" rx="22" ry="25" fill="white" />
+  <ellipse cx="290" cy="272" rx="16" ry="18" fill="#4A90D9" />
+  <ellipse cx="290" cy="275" rx="13" ry="14" fill="#3070B8" />
+  <circle cx="283" cy="264" r="5" fill="white" opacity="0.9" />
+  <circle cx="296" cy="278" r="3" fill="white" opacity="0.5" />
+  <ellipse cx="290" cy="280" rx="8" ry="6" fill="#1E4D8C" />
+
+  <!-- Eyebrows -->
+  <path d="M200,248 Q215,240 240,245" stroke="#8B6B4A" stroke-width="3" fill="none" stroke-linecap="round" />
+  <path d="M312,248 Q297,240 272,245" stroke="#8B6B4A" stroke-width="3" fill="none" stroke-linecap="round" />
+
+  <!-- Blush -->
+  <ellipse cx="200" cy="298" rx="18" ry="10" fill="#FFB0B0" opacity="0.5" />
+  <ellipse cx="312" cy="298" rx="18" ry="10" fill="#FFB0B0" opacity="0.5" />
+
+  <!-- Nose -->
+  <circle cx="256" cy="295" r="3" fill="#EECCA8" />
+
+  <!-- Mouth (small smile) -->
+  <path d="M240,320 Q256,332 272,320" stroke="#D4846A" stroke-width="2.5" fill="none" stroke-linecap="round" />
+
+  <!-- Subtle outline -->
+  <circle cx="256" cy="256" r="240" fill="none" stroke="#FF8FAB" stroke-width="3" opacity="0.3" />
+</svg>

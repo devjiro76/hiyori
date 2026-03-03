@@ -1,0 +1,45 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicedoc/tauri-schema/main/tauri.conf.json.schema",
+  "productName": "Hyori",
+  "version": "0.1.0",
+  "identifier": "io.molroo.hyori",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "title": "Hyori",
+        "width": 450,
+        "height": 852,
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": false,
+        "resizable": true,
+        "shadow": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.png"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  }
+}

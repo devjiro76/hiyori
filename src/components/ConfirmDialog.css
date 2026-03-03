@@ -1,0 +1,141 @@
+/* ── Confirm dialog overlay ── */
+.confirm-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: settingsFadeIn 0.2s ease-out;
+}
+
+.confirm-panel {
+  width: 88%;
+  max-width: 320px;
+  background: rgba(30, 30, 30, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 20px 18px;
+  color: #eee;
+  text-align: center;
+}
+
+.confirm-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.confirm-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.confirm-desc {
+  font-size: 13px;
+  color: #aaa;
+  margin: 0 0 12px;
+}
+
+.confirm-args {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.confirm-arg {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.confirm-arg:last-child {
+  margin-bottom: 0;
+}
+
+.confirm-arg-key {
+  color: #888;
+  flex-shrink: 0;
+}
+
+.confirm-arg-value {
+  color: #ddd;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.confirm-risk {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 14px;
+}
+
+.risk-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.risk-badge--safe {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.risk-badge--moderate {
+  background: rgba(234, 179, 8, 0.2);
+  color: #facc15;
+}
+
+.risk-badge--dangerous {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+/* ── Buttons ── */
+.confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.confirm-actions button {
+  flex: 1;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.confirm-cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #aaa;
+}
+
+.confirm-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.confirm-ok-btn {
+  background: #2563eb;
+  color: #fff;
+}
+
+.confirm-ok-btn:hover {
+  background: #1d4ed8;
+}

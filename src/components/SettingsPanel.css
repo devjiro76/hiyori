@@ -1,0 +1,171 @@
+/* ── Settings overlay ── */
+.settings-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: settingsFadeIn 0.2s ease-out;
+}
+
+@keyframes settingsFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.settings-panel {
+  width: 92%;
+  max-width: 340px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 20px 18px;
+  color: #eee;
+}
+
+.settings-panel h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+/* ── Section ── */
+.settings-section {
+  margin-bottom: 18px;
+}
+
+.settings-section h3 {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  margin: 0 0 10px;
+}
+
+/* ── Field ── */
+.settings-field {
+  margin-bottom: 10px;
+}
+
+.settings-field label {
+  display: block;
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 4px;
+}
+
+.settings-field select,
+.settings-field input,
+.settings-field textarea {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #eee;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.settings-field select:focus,
+.settings-field input:focus,
+.settings-field textarea:focus {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.settings-field select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+.settings-field textarea {
+  min-height: 80px;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.settings-field input::placeholder,
+.settings-field textarea::placeholder {
+  color: #555;
+}
+
+/* ── Checkbox ── */
+.settings-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #eee;
+  cursor: pointer;
+}
+
+.settings-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+/* ── Buttons ── */
+.settings-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.settings-actions button {
+  flex: 1;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.settings-save-btn {
+  background: #2563eb;
+  color: #fff;
+}
+
+.settings-save-btn:hover {
+  background: #1d4ed8;
+}
+
+.settings-cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #aaa;
+}
+
+.settings-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* ── Scrollbar ── */
+.settings-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.settings-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}

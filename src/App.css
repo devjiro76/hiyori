@@ -1,0 +1,79 @@
+.app-root {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: transparent;
+}
+
+/* Interactive elements must not be draggable */
+.no-drag,
+input,
+button,
+textarea,
+select,
+a {
+  -webkit-app-region: no-drag;
+}
+
+/* ── Resize corners — iPhone Simulator style ── */
+.resize-corner {
+  position: absolute;
+  z-index: 50;
+  width: 18px;
+  height: 18px;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.resize-corner::before,
+.resize-corner::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 1px;
+}
+
+/* Horizontal bar */
+.resize-corner::before {
+  width: 12px;
+  height: 2px;
+}
+
+/* Vertical bar */
+.resize-corner::after {
+  width: 2px;
+  height: 12px;
+}
+
+/* ┌ top-left */
+.resize-corner--nw {
+  top: 0; left: 0;
+  cursor: nw-resize;
+}
+.resize-corner--nw::before { top: 3px; left: 3px; }
+.resize-corner--nw::after  { top: 3px; left: 3px; }
+
+/* ┐ top-right */
+.resize-corner--ne {
+  top: 0; right: 0;
+  cursor: ne-resize;
+}
+.resize-corner--ne::before { top: 3px; right: 3px; }
+.resize-corner--ne::after  { top: 3px; right: 3px; }
+
+/* └ bottom-left */
+.resize-corner--sw {
+  bottom: 0; left: 0;
+  cursor: sw-resize;
+}
+.resize-corner--sw::before { bottom: 3px; left: 3px; }
+.resize-corner--sw::after  { bottom: 3px; left: 3px; }
+
+/* ┘ bottom-right */
+.resize-corner--se {
+  bottom: 0; right: 0;
+  cursor: se-resize;
+}
+.resize-corner--se::before { bottom: 3px; right: 3px; }
+.resize-corner--se::after  { bottom: 3px; right: 3px; }
