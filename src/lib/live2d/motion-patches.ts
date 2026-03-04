@@ -5,7 +5,9 @@
  * - Intercepts startMotion to patch lazy-loaded motions and track active state
  */
 
-export function patchEyeBallCurves(motion: any): void {
+import type { CubismMotion, CubismMotionManager } from './types'
+
+export function patchEyeBallCurves(motion: CubismMotion): void {
   if (!motion?._motionData?.curves) return
   for (const curve of motion._motionData.curves) {
     if (!curve.id || curve.id.startsWith('_')) continue
@@ -16,26 +18,26 @@ export function patchEyeBallCurves(motion: any): void {
   }
 }
 
-export function patchIdleMotions(motionManager: any): void {
+export function patchIdleMotions(motionManager: CubismMotionManager): void {
   const idleGroup = motionManager.groups.idle
   if (!idleGroup) return
-  motionManager.motionGroups[idleGroup]?.forEach(patchEyeBallCurves)
+  motionManager.motionGroups[idleGroup]?.forEach(m => patchEyeBallCurves(m as CubismMotion))
 }
 
 export function interceptStartMotion(
-  motionManager: any,
+  motionManager: CubismMotionManager,
   onNonIdleMotion: (group: string, index: number) => void,
 ): void {
   const idleGroupName = motionManager.groups.idle
   const original = motionManager.startMotion.bind(motionManager)
 
-  ;(motionManager as any).startMotion = function (group: string, index: number, priority?: number) {
+  motionManager.startMotion = function (group: string, index: number, priority?: number) {
     const result = original(group, index, priority)
 
     if (group === idleGroupName) {
       Promise.resolve(result).then(() => {
         const motions = motionManager.motionGroups[group]
-        if (motions?.[index]) patchEyeBallCurves(motions[index])
+        if (motions?.[index]) patchEyeBallCurves(motions[index] as CubismMotion)
       })
     }
 

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { createDirectChat, type DirectChat, type ChatResult } from '../lib/llm/direct-chat'
 import type { LlmConfig } from '../lib/llm/adapter'
 import { routeAgentRequest, type ConfirmFn, type ToolStatusFn, type ToolResult } from '../lib/agent'
+import { DEFAULT_MAX_HISTORY_TURNS } from '../lib/constants'
 
 export type { LlmConfig } from '../lib/llm/adapter'
 
@@ -36,6 +37,7 @@ function loadLlmConfig(): LlmConfig {
         model: saved.model ?? DEFAULT_LLM_MODEL,
         apiKey: saved.apiKey,
         baseUrl: saved.baseUrl,
+        maxHistoryTurns: saved.maxHistoryTurns,
       }
     }
   } catch { /* ignore */ }
@@ -104,8 +106,10 @@ export function useSession(
       const chat = chatRef.current
       if (!chat) throw new Error('Chat not initialized')
 
-      // Build conversation history
-      const history = turnHistory.map(t => [
+      // Build conversation history (limited by maxHistoryTurns)
+      const maxTurns = llmConfig.maxHistoryTurns ?? DEFAULT_MAX_HISTORY_TURNS
+      const recentTurns = turnHistory.slice(-maxTurns)
+      const history = recentTurns.map(t => [
         { role: 'user' as const, content: t.userMessage },
         { role: 'assistant' as const, content: t.result.text },
       ]).flat()

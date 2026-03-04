@@ -12,6 +12,8 @@
  * This way the motion sets the base parameters, and the expression adds deltas on top.
  */
 
+import type { CubismCoreModel } from './types'
+
 export interface Exp3Parameter {
   Id: string
   Value: number
@@ -31,7 +33,7 @@ export interface Exp3Expression {
  * @param weight - Blend weight 0..1 (for fade-in/out transitions)
  */
 export function applyExp3Expression(
-  coreModel: any,
+  coreModel: CubismCoreModel,
   expression: Exp3Expression,
   weight: number,
 ): void {

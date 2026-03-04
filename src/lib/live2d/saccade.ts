@@ -9,6 +9,7 @@ import type { InternalModel } from 'pixi-live2d-display/cubism4'
 
 import { lerp } from './math'
 import { randomSaccadeInterval } from './saccade-timing'
+import type { CubismCoreModel } from './types'
 
 function randFloat(min: number, max: number): number {
   return min + Math.random() * (max - min)
@@ -32,9 +33,11 @@ export function createLive2DIdleEyeFocus(): Live2DSaccadeController {
     }
 
     model.focusController.update(now - lastSaccadeAt)
-    const coreModel = model.coreModel as any
-    coreModel.setParameterValueById('ParamEyeBallX', lerp(coreModel.getParameterValueById('ParamEyeBallX'), focusTarget![0], 0.3))
-    coreModel.setParameterValueById('ParamEyeBallY', lerp(coreModel.getParameterValueById('ParamEyeBallY'), focusTarget![1], 0.3))
+    const coreModel = model.coreModel as CubismCoreModel
+    const eyeX = coreModel.getParameterValueById('ParamEyeBallX') ?? 0
+    const eyeY = coreModel.getParameterValueById('ParamEyeBallY') ?? 0
+    coreModel.setParameterValueById('ParamEyeBallX', lerp(eyeX, focusTarget![0], 0.3))
+    coreModel.setParameterValueById('ParamEyeBallY', lerp(eyeY, focusTarget![1], 0.3))
   }
 
   return { update }

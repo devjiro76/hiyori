@@ -1,0 +1,34 @@
+.live2d-wrapper {
+  position: absolute;
+  right: calc(-1 * var(--character-overflow-right));
+  top: 0;
+  width: var(--character-width);
+  height: 100%;
+  z-index: var(--z-live2d);
+  pointer-events: auto; /* Capture clicks on Hyori */
+}
+
+.live2d-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--color-text-dim);
+  font-size: 14px;
+}
+
+.live2d-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--color-bg-disabled);
+  border-top: 2px solid var(--color-text-dim);
+  border-radius: 50%;
+  animation: live2dSpin 0.8s linear infinite;
+}
+
+@keyframes live2dSpin {
+  to { transform: rotate(360deg); }
+}

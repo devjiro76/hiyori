@@ -57,8 +57,8 @@ export async function routeAgentRequest(
 
   const { modelId, baseUrl, headers } = reqConfig
 
-  // Build messages: system + recent history (last 6 turns) + current user message
-  const recentHistory = history.slice(-12) // 6 turns = 12 messages
+  // Build messages: system + history (already trimmed by caller) + current user message
+  const recentHistory = history
   const allResults: ToolResult[] = []
   let loopCount = 0
   const MAX_LOOPS = 4 // Max 4 attempts to handle tool failures

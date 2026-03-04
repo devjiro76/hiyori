@@ -41,6 +41,7 @@ export interface LlmConfig {
   model?: string
   apiKey?: string
   baseUrl?: string
+  maxHistoryTurns?: number
 }
 
 function buildMessages(system: string | undefined, messages: Message[]): Message[] {

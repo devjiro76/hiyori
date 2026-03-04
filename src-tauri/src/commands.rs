@@ -206,7 +206,7 @@ pub fn get_global_mouse_position() -> MousePosition {
     {
         use objc::{msg_send, sel, sel_impl};
         use objc::runtime::Class;
-
+        #[allow(unexpected_cfgs)]
         unsafe {
             let event_class = Class::get("NSEvent").expect("NSEvent class not found");
             let location: (f64, f64) = msg_send![event_class, mouseLocation];

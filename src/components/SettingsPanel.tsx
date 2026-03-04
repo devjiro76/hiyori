@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { LLM_PROVIDERS } from '../lib/llm/providers'
 import type { LlmConfig } from '../lib/llm/adapter'
+import { DEFAULT_MAX_HISTORY_TURNS } from '../lib/constants'
 import './SettingsPanel.css'
 
 interface SettingsPanelProps {
@@ -22,6 +23,7 @@ export function SettingsPanel({
   const [model, setModel] = useState(llmConfig.model ?? '')
   const [apiKey, setApiKey] = useState(llmConfig.apiKey ?? '')
   const [baseUrl, setBaseUrl] = useState(llmConfig.baseUrl ?? '')
+  const [maxHistoryTurns, setMaxHistoryTurns] = useState(llmConfig.maxHistoryTurns ?? DEFAULT_MAX_HISTORY_TURNS)
 
   const providerDef = LLM_PROVIDERS.find(p => p.id === provider)
 
@@ -37,7 +39,7 @@ export function SettingsPanel({
   }, [provider])
 
   function handleSave() {
-    onSave({ provider, model, apiKey: apiKey || undefined, baseUrl: baseUrl || undefined })
+    onSave({ provider, model, apiKey: apiKey || undefined, baseUrl: baseUrl || undefined, maxHistoryTurns })
     onClose()
   }
 
@@ -113,6 +115,22 @@ export function SettingsPanel({
               </div>
             </>
           )}
+        </div>
+
+        {/* Chat Section */}
+        <div className="settings-section">
+          <h3>Chat</h3>
+          <div className="settings-field">
+            <label>History Turns</label>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={maxHistoryTurns}
+              onChange={e => setMaxHistoryTurns(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
+            />
+            <span className="settings-hint">LLM에 보낼 대화 턴 수 (1턴 = 질문+답변)</span>
+          </div>
         </div>
 
         {/* Window Section */}

@@ -16,10 +16,11 @@ import { attachMouseGaze, attachGlobalMouseGaze, resolveGaze } from './gaze'
 import { attachGestureHandlers } from './gestures'
 import { interceptStartMotion, patchIdleMotions } from './motion-patches'
 import { createLive2DIdleEyeFocus } from './saccade'
+import type { CubismCoreModel, CubismMotionManager, PhysicsRig } from './types'
 
 export interface ControllerState {
-  coreModel: any
-  motionManager: any
+  coreModel: CubismCoreModel
+  motionManager: CubismMotionManager
   internalModel: InternalModel
   currentExpression: Exp3Expression | undefined
   currentExpressionWeight: number
@@ -34,6 +35,7 @@ export interface StageCallbacks {
 }
 
 export interface StageResult {
+  // PixiJS Application — no public types in v6 dynamic import
   app: any
   model: Live2DModel<InternalModel>
   motionGroups: Record<string, number>
@@ -64,11 +66,13 @@ export async function createLive2DStage(
     preserveDrawingBuffer: true,
   })
 
+  // PixiJS v6 Ticker type mismatch with pixi-live2d-display
   Live2DModel.registerTicker(Ticker as any)
 
   const live2DModel = new Live2DModel<InternalModel>()
   await Live2DFactory.setupLive2DModel(live2DModel, character.modelUrl, { autoInteract: false })
 
+  // PixiJS v6 DisplayObject type mismatch
   app.stage.addChild(live2DModel as any)
   const initialModelHeight = live2DModel.height
   live2DModel.anchor.set(0.5, 0.5)
@@ -93,8 +97,8 @@ export async function createLive2DStage(
   let mouseGaze: { x: number; y: number } | null = null
   const idleEyeFocus = createLive2DIdleEyeFocus()
   const internalModel = live2DModel.internalModel
-  const motionManager = internalModel.motionManager
-  const coreModel = internalModel.coreModel as any
+  const motionManager = internalModel.motionManager as unknown as CubismMotionManager
+  const coreModel = internalModel.coreModel as CubismCoreModel
 
   console.log('[createLive2DStage] Init: coreModel?', !!coreModel, 'internalModel?', !!internalModel)
 
@@ -127,14 +131,14 @@ export async function createLive2DStage(
 
   // --- Drag physics ---
   const dragPhysics = attachDragPhysics(canvas)
-  const physicsRig = (internalModel as any).physics?._physicsRig ?? null
+  const physicsRig = (internalModel as unknown as { physics?: { _physicsRig?: PhysicsRig } }).physics?._physicsRig ?? null
 
   // --- Gaze + idle tracking (motionManager.update hook) ---
   const idleGroupName = motionManager.groups.idle
   const originalMotionUpdate = motionManager.update.bind(motionManager)
   let prevIsIdle = true
 
-  motionManager.update = function (cm: any, now: number) {
+  motionManager.update = function (cm: CubismCoreModel, now: number) {
     const result = originalMotionUpdate(cm, now)
 
     const drag = dragPhysics.update()
@@ -211,10 +215,10 @@ export async function createLive2DStage(
   }
 
   // --- Extract motion groups ---
-  const defs = (motionManager as any).definitions ?? {}
+  const defs = motionManager.definitions ?? {}
   const motionGroups: Record<string, number> = {}
   for (const [group, motions] of Object.entries(defs)) {
-    motionGroups[group] = (motions as any[]).length
+    motionGroups[group] = motions?.length ?? 0
   }
 
   // --- Event handlers ---

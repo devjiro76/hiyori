@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { TOOL_STATUS_CLEAR_DELAY_MS } from './lib/constants'
 import { hyoriCharacter } from './characters/hyori'
 import { Live2DViewer } from './components/Live2DViewer'
 import { ChatBubble } from './components/ChatBubble'
@@ -11,7 +12,6 @@ import type { Live2DController } from './hooks/useLive2D'
 import type { AgentResponse } from './lib/types'
 import type { ToolDef } from './lib/agent'
 import './App.css'
-import './components/ChatBubble.css'
 
 const EMOTION_SYMBOLS: Record<string, string> = {
   joy: '♪', contentment: '~', trust: '♡', calm: '―',
@@ -29,7 +29,7 @@ export default function App() {
   const {
     alwaysOnTop, settingsOpen, setSettingsOpen,
     showResizeCorners, setInputFocused,
-    handleMouseDown, handleToggleAlwaysOnTop,
+    handleToggleAlwaysOnTop,
   } = useWindowBehavior()
 
   // Confirm dialog state
@@ -48,7 +48,7 @@ export default function App() {
   const onToolStatus = useCallback((name: string, descriptionKo: string, status: 'running' | 'done' | 'error') => {
     setToolStatus({ name, descriptionKo, status })
     if (status !== 'running') {
-      setTimeout(() => setToolStatus(null), 2000)
+      setTimeout(() => setToolStatus(null), TOOL_STATUS_CLEAR_DELAY_MS)
     }
   }, [])
 
@@ -74,11 +74,8 @@ export default function App() {
   }
 
   return (
-    <div className="app-root" onMouseDown={handleMouseDown}>
-      {/* Corner resize handles */}
-      <div className="resize-corner resize-corner--nw no-drag" data-resize-dir="NorthWest" style={{ opacity: showResizeCorners ? 1 : 0, pointerEvents: showResizeCorners ? 'auto' : 'none' }} />
-      <div className="resize-corner resize-corner--ne no-drag" data-resize-dir="NorthEast" style={{ opacity: showResizeCorners ? 1 : 0, pointerEvents: showResizeCorners ? 'auto' : 'none' }} />
-      <div className="resize-corner resize-corner--sw no-drag" data-resize-dir="SouthWest" style={{ opacity: showResizeCorners ? 1 : 0, pointerEvents: showResizeCorners ? 'auto' : 'none' }} />
+    <div className="app-root">
+      {/* Resize handle — bottom-right only */}
       <div className="resize-corner resize-corner--se no-drag" data-resize-dir="SouthEast" style={{ opacity: showResizeCorners ? 1 : 0, pointerEvents: showResizeCorners ? 'auto' : 'none' }} />
 
       <Live2DViewer

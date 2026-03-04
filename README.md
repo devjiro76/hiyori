@@ -1,93 +1,100 @@
-# Hyori - Live2D Desktop Companion
-
-Your cute and reliable desktop assistant powered by Live2D.
-
-A transparent, frameless macOS desktop app featuring a Live2D character that lives on your screen. Chat naturally, get desktop tasks done, and enjoy an always-present companion.
-
 <p align="center">
-  <img src="src-tauri/icons/icon.png" width="128" alt="Hyori icon" />
+  <img src="src-tauri/icons/icon.png" width="128" alt="Hiyori" />
 </p>
 
-## Features
+<h1 align="center">Hiyori</h1>
 
-- **Live2D Character** — Expressive anime character with emotion-driven animations, gaze tracking, physics-based dragging, and idle motions
-- **AI Chat** — Natural conversation via OpenAI-compatible APIs (OpenAI, Anthropic, Google, Groq, local models)
-- **Desktop Agent** — Launch apps, open URLs, run shell commands, manage clipboard, send notifications — all through chat
-- **Transparent Window** — Frameless, always-on-top capable, proportionally resizable
-- **Emotion System** — VAD (Valence-Arousal-Dominance) emotion model that maps AI responses to Live2D expressions in real-time
-- **BYOK** — Bring Your Own Key. All API keys stay local on your machine
+<p align="center">
+  <strong>A Live2D character that lives on your desktop.</strong><br/>
+  She chats, reacts, helps — and her eyes follow your mouse.
+</p>
 
-## Tech Stack
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-macOS-black?logo=apple" alt="macOS" />
+  <img src="https://img.shields.io/badge/Tauri-v2-FFC131?logo=tauri&logoColor=white" alt="Tauri v2" />
+  <img src="https://img.shields.io/badge/Live2D-Cubism-FF6699" alt="Live2D" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19" />
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT" />
+</p>
 
-| Layer | Technology |
-|-------|-----------|
-| Desktop | [Tauri v2](https://v2.tauri.app/) (Rust) |
-| Frontend | React 19 + TypeScript + Tailwind CSS v4 |
-| Live2D | pixi-live2d-display + PixiJS v6 |
-| LLM | OpenAI-compatible chat completions API |
-| Testing | Vitest |
+---
 
-## Prerequisites
+<p align="center">
+  <img src="docs/screenshots/desktop-companion.png" width="720" alt="Hiyori on your desktop" />
+</p>
 
-- **Node.js** >= 18
-- **pnpm**
-- **Rust** (latest stable)
-- **Tauri v2 CLI** — `cargo install tauri-cli --version "^2"`
-- **Live2D Cubism Core SDK** — Place `live2dcubismcore.min.js` in `public/`
-- **Live2D Model** — Place model files in `public/models/`
+## She lives on your screen.
 
-> Live2D SDK and models are proprietary and not included in this repository.
+Hiyori is a desktop companion app. She sits on top of your windows — transparent, always there. Talk to her, ask her things, or just let her keep you company while you work.
 
-## Setup
+<p align="center">
+  <img src="docs/screenshots/standalone.png" width="560" alt="Hiyori standalone" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/chat-overlay.png" width="280" alt="Chatting with Hiyori" />
+</p>
+
+## What makes her special
+
+### She watches you.
+Her eyes track your mouse cursor in real-time. Move your mouse around — she follows. It's a small thing, but it makes her feel *alive*.
+
+### She reacts emotionally.
+Every LLM response includes emotion metadata (valence, arousal, dominance + discrete label). Hiyori maps these to Live2D expressions in real-time — so her face actually changes when she's happy, surprised, or annoyed.
+
+### She can do things.
+She's not just a chatbot. She's a desktop agent:
+- Open apps and URLs
+- Run shell commands
+- Manage your clipboard
+- Send notifications
+- ...all through natural conversation
+
+### She works with any LLM.
+Bring your own API key. OpenAI, Anthropic, Google, Groq, local models — anything OpenAI-compatible works. Your keys stay on your machine, always.
+
+## Quick Start
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Run in development
 pnpm tauri:dev
-
-# Build for production
-pnpm tauri:build
-
-# Run tests
-pnpm test
 ```
 
-## Configuration
+On first launch, press `Cmd + ,` to set your LLM provider and API key.
 
-On first launch, open Settings (`Cmd + ,`) to configure:
+### Requirements
 
-1. **LLM Provider** — Select your provider (OpenAI, Anthropic, Google, Groq, etc.)
-2. **API Key** — Enter your API key
-3. **Model** — Choose a model or use the default
+- macOS (Windows/Linux planned)
+- Node.js >= 18, pnpm, Rust
+- [Tauri v2 CLI](https://v2.tauri.app/)
+- Live2D Cubism Core SDK + model files (proprietary, not included)
 
-## Project Structure
+## Tech
+
+| Layer | Stack |
+|-------|-------|
+| Desktop Runtime | Tauri v2 (Rust) |
+| UI | React 19 + Tailwind CSS v4 |
+| Character | pixi-live2d-display + PixiJS v6 |
+| LLM | OpenAI-compatible chat completions |
+| Emotion | LLM-generated VAD → Live2D expression mapping |
+| Storage | SQLite (via Tauri SQL plugin) |
+| Testing | Vitest |
+
+## Architecture
 
 ```
-src/
-├── App.tsx                     # Main app component
-├── components/                 # React components
-│   ├── ChatBubble.tsx          # Chat interface
-│   ├── ChatHistory.tsx         # Message history
-│   ├── ConfirmDialog.tsx       # Tool confirmation dialog
-│   ├── Live2DViewer.tsx        # Live2D canvas
-│   └── SettingsPanel.tsx       # Settings UI
-├── hooks/
-│   ├── useLive2D.ts            # Live2D lifecycle hook
-│   └── useWindowBehavior.ts    # Window behavior hook
-├── lib/
-│   ├── agent/                  # Desktop agent (tools, safety, routing)
-│   ├── live2d/                 # Live2D engine (emotions, gaze, physics)
-│   └── llm/                    # LLM adapter and config
-├── characters/                 # Character definitions
-└── styles/                     # Tailwind styles
-
-src-tauri/
-├── src/
-│   ├── lib.rs                  # Tauri app setup
-│   └── commands.rs             # Rust IPC commands
-└── Cargo.toml
+You ──── chat ────→ LLM Provider (your key)
+                         │
+                    response + emotion (JSON structured output)
+                         │
+                         ▼
+                    Hiyori App
+                    ├── Emotion → Live2D expression mapping
+                    ├── Live2D renderer (gaze tracking, physics, idle)
+                    ├── Desktop agent (tools, safety checks)
+                    └── Chat history (local SQLite)
 ```
 
 ## License

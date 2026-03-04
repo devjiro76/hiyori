@@ -1,66 +1,65 @@
 /* ── Speech bubble (character response, floats above head) ── */
 .speech-bubble {
   position: absolute;
-  top: 4%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  max-width: 320px;
-  padding: 12px 18px;
+  top: 80px;
+  right: 260px;
+  left: auto;
+  transform: translateX(0);
+  z-index: var(--z-chat-ui);
+  max-width: 240px;
+  padding: 10px 16px;
   font-size: 15px;
   font-weight: 600;
   color: #1a1a1a;
   background: #fff;
-  border: 2.5px solid #222;
+  border: 3px solid #222;
   border-radius: 22px;
-  box-shadow: 3px 3px 0 #222;
-  text-align: center;
+  text-align: left;
   line-height: 1.4;
-  pointer-events: none;
-  animation: speechPop 3.5s ease-out forwards;
+  pointer-events: auto; /* Capture clicks on bubble */
+  animation: speechPop 7s ease-out forwards;
 }
 
 .speech-bubble::after {
   content: '';
   position: absolute;
-  bottom: -14px;
-  left: 50%;
-  margin-left: -8px;
+  bottom: -12px;
+  right: 22px;
+  left: auto;
   width: 0;
   height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 16px solid #fff;
-  filter: drop-shadow(1px 2px 0 #222);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 14px solid #fff;
 }
 
 .speech-bubble::before {
   content: '';
   position: absolute;
-  bottom: -18px;
-  left: 50%;
-  margin-left: -10px;
+  bottom: -17px;
+  right: 19px;
+  left: auto;
   width: 0;
   height: 0;
   border-left: 10px solid transparent;
   border-right: 10px solid transparent;
-  border-top: 20px solid #222;
+  border-top: 19px solid #222;
 }
 
 @keyframes speechPop {
-  0% { opacity: 0; transform: translateX(-50%) scale(0.4); }
-  6% { opacity: 1; transform: translateX(-50%) scale(1.08); }
-  12% { transform: translateX(-50%) scale(1); }
-  75% { opacity: 1; transform: translateX(-50%) scale(1); }
-  100% { opacity: 0; transform: translateX(-50%) scale(0.95) translateY(-6px); }
+  0% { opacity: 0; transform: scale(0.4); }
+  3% { opacity: 1; transform: scale(1.08); }
+  6% { transform: scale(1); }
+  87% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.95) translateY(-6px); }
 }
 
 /* ── Emotion reaction ── */
 .emotion-reaction {
   position: absolute;
-  top: 8%;
-  right: 12%;
-  z-index: 20;
+  top: 140px;
+  right: 160px;
+  z-index: var(--z-chat-ui);
   padding: 6px 14px;
   font-size: 20px;
   font-weight: 700;
@@ -68,7 +67,7 @@
   background: rgba(30, 30, 30, 0.6);
   border: 2px dashed rgba(255, 255, 255, 0.5);
   border-radius: 18px;
-  pointer-events: none;
+  pointer-events: auto;
   animation: reactionPop 1.8s ease-out forwards;
 }
 
@@ -83,43 +82,121 @@
 /* ── Session loading ── */
 .session-loading {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 20;
+  top: 20px;
+  right: 140px;
+  left: auto;
+  transform: translateX(0);
+  z-index: var(--z-chat-ui);
   padding: 10px 20px;
   background: rgba(30, 30, 30, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 18px;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
-/* ── History overlay ── */
+/* ── History overlay — behind character when closed, in front when active ── */
 .history-overlay {
   position: absolute;
-  inset: 0;
-  z-index: 15;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--character-width);
+  z-index: 2; /* Below live2d (5) — visible behind character */
+  background: transparent;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
+  padding-right: 0;
+  pointer-events: none; /* Pass through when behind */
+  transition: z-index 0s;
+}
+
+.history-overlay--active {
+  z-index: var(--z-chat-history); /* Above live2d — interactive */
+  pointer-events: auto;
 }
 
 .history-list {
-  width: 100%;
-  max-width: 360px;
+  width: 420px;
+  height: 100%;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px 16px 80px;
+  gap: 8px;
+  padding: 60px 16px 100px;
+  background: rgba(30, 30, 30, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-.history-list::before {
-  content: '';
-  flex: 1 1 auto;
+/* When behind character, no background */
+.history-overlay:not(.history-overlay--active) .history-list {
+  pointer-events: none;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.history-bubble {
+  max-width: 90%;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-word;
+  border-radius: 16px;
+  animation: fadeIn 0.2s ease-out;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.history-bubble--user {
+  align-self: flex-end;
+  background: rgba(37, 99, 235, 0.7);
+  color: #fff;
+  border-radius: 16px 16px 4px 16px;
+}
+
+.history-bubble--assistant {
+  align-self: flex-start;
+  background: rgba(60, 60, 60, 0.9);
+  color: #eee;
+  border-radius: 16px 16px 16px 4px;
+}
+
+.history-bubble--tool {
+  align-self: center;
+  background: transparent;
+  padding: 4px 0;
+}
+
+.history-text {
+  display: block;
+}
+
+/* Tool result in history */
+.history-bubble--tool .tool-result {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 2px 0;
+}
+
+.history-bubble--tool .tool-result--ok {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.history-bubble--tool .tool-result--fail {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
 }
 
 .bubble {
@@ -134,15 +211,15 @@
 
 .bubble--user {
   align-self: flex-end;
-  background: rgba(37, 99, 235, 0.7);
+  background: var(--color-user-bubble);
   color: #fff;
   border-radius: 18px 18px 4px 18px;
 }
 
 .bubble--assistant {
   align-self: flex-start;
-  background: rgba(30, 30, 30, 0.8);
-  color: #eee;
+  background: var(--color-assistant-bubble);
+  color: var(--color-text);
   border-radius: 18px 18px 18px 4px;
 }
 
@@ -155,24 +232,27 @@
 .input-layer {
   position: absolute;
   bottom: 0;
-  left: 0;
   right: 0;
-  z-index: 20;
+  left: auto;
+  width: 420px;
+  z-index: var(--z-chat-ui);
   display: flex;
   justify-content: center;
   padding: 6px 8px;
-  pointer-events: none;
+  pointer-events: auto; /* Capture clicks on input bar */
 }
 
 .input-bar {
   width: 100%;
+  margin-left: auto;
+  margin-right: 0;
   display: flex;
   gap: 6px;
   padding: 8px 12px;
-  background: rgba(20, 20, 20, 0.85);
+  background: var(--color-bg-darker);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border: 1.5px solid var(--color-border-light);
   border-radius: 22px;
   pointer-events: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -187,9 +267,9 @@
   justify-content: center;
   font-size: 14px;
   background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border);
   border-radius: 50%;
-  color: #aaa;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
@@ -217,7 +297,7 @@
 }
 
 .chat-input::placeholder {
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .send-btn {
@@ -229,7 +309,7 @@
   justify-content: center;
   font-size: 16px;
   font-weight: 700;
-  background: #2563eb;
+  background: var(--color-primary);
   border: none;
   border-radius: 50%;
   color: #fff;
@@ -238,12 +318,12 @@
 }
 
 .send-btn:hover {
-  background: #1d4ed8;
+  background: var(--color-primary-hover);
 }
 
 .send-btn:disabled {
-  background: #333;
-  color: #666;
+  background: var(--color-bg-disabled);
+  color: var(--color-text-disabled);
   cursor: default;
 }
 
@@ -256,7 +336,7 @@
 .dots span {
   width: 5px;
   height: 5px;
-  background: #888;
+  background: var(--color-text-dim);
   border-radius: 50%;
   animation: dotBounce 1.2s infinite;
 }
@@ -272,21 +352,22 @@
 /* ── Tool status indicator ── */
 .tool-status {
   position: absolute;
-  top: 12%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
+  top: 40px;
+  right: 180px;
+  left: auto;
+  transform: translateX(0);
+  z-index: var(--z-chat-ui);
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 600;
-  color: #eee;
+  color: var(--color-text);
   background: rgba(30, 30, 30, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   pointer-events: none;
   animation: toolStatusIn 0.3s ease-out;
@@ -303,8 +384,8 @@
 }
 
 @keyframes toolStatusIn {
-  from { opacity: 0; transform: translateX(-50%) scale(0.8); }
-  to { opacity: 1; transform: translateX(-50%) scale(1); }
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* ── Tool result in history ── */
@@ -328,13 +409,13 @@
 }
 
 .tool-result--ok {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
+  background: var(--color-success-bg);
+  color: var(--color-success);
 }
 
 .tool-result--fail {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
+  background: var(--color-error-bg);
+  color: var(--color-error);
 }
 
 .tool-result-icon {
@@ -343,6 +424,24 @@
 
 .tool-result-name {
   font-size: 11px;
+}
+
+/* ── Chat history message row ── */
+.bubble-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bubble-settings-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  background-color: var(--color-error, #f87171);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 /* ── Scrollbar ── */

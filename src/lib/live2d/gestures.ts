@@ -8,13 +8,15 @@
 import type { InternalModel } from 'pixi-live2d-display/cubism4'
 import type { Live2DModel } from 'pixi-live2d-display/cubism4'
 
+import type { CubismMotionManager } from './types'
+
 const FLICK_DIST = 30   // px — minimum drag to count as flick
 const FLICK_TIME = 400  // ms — max duration for flick gesture
 
 export function attachGestureHandlers(
   canvas: HTMLCanvasElement,
   model: Live2DModel<InternalModel>,
-  motionManager: any,
+  motionManager: CubismMotionManager,
   isDisposed: () => boolean,
 ): () => void {
   let pointerStart: { x: number; y: number; t: number } | null = null

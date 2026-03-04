@@ -1,8 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
+import './ChatBubble.css'
 import type { SessionState } from '../hooks/useSession'
 import type { AgentResponse } from '../lib/types'
 import type { ToolResult } from '../lib/agent'
-import { ChatHistory, type ChatMessage } from './ChatHistory'
+import { useChatHistory } from '../hooks/useChatHistory'
+import { SpeechBubble } from './SpeechBubble'
+import { EmotionReaction } from './EmotionReaction'
+import { ToolStatusIndicator } from './ToolStatusIndicator'
+import { SessionErrorOverlay } from './SessionErrorOverlay'
+import { InputBar } from './InputBar'
 
 interface ChatBubbleProps {
   session: SessionState
@@ -35,10 +41,10 @@ export function ChatBubble({
   settingsOpen,
 }: ChatBubbleProps) {
   const [input, setInput] = useState('')
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [historyMode, setHistoryMode] = useState<'hidden' | 'behind' | 'front'>('hidden')
+  const { messages, addMessage } = useChatHistory()
   const [floatingText, setFloatingText] = useState<string | null>(null)
   const [floatingDuration, setFloatingDuration] = useState(3.5)
-  const [historyOpen, setHistoryOpen] = useState(false)
   const floatingTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const reactionTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
@@ -49,14 +55,10 @@ export function ChatBubble({
     return () => { if (reactionTimerRef.current) clearTimeout(reactionTimerRef.current) }
   }, [emotionReaction, onEmotionReactionDone])
 
-  useEffect(() => {
-    if (session.status === 'idle') setMessages([])
-  }, [session.status])
-
   async function handleSend() {
     if (!input.trim() || isProcessing || session.status !== 'active') return
     const userMsg = input.trim()
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }])
+    await addMessage({ id: crypto.randomUUID(), role: 'user', text: userMsg })
     setInput('')
 
     const result = await onSend(userMsg)
@@ -64,9 +66,14 @@ export function ChatBubble({
       // Error is handled by session.status = 'error' in useSession
     } else if (result) {
       if (lastToolResults && lastToolResults.length > 0) {
-        setMessages(prev => [...prev, { role: 'tool', text: '', toolResults: lastToolResults }])
+        await addMessage({
+          id: crypto.randomUUID(),
+          role: 'tool',
+          text: '',
+          toolResults: lastToolResults.map(t => ({ name: t.name, status: t.status, descriptionKo: t.descriptionKo }))
+        })
       }
-      setMessages(prev => [...prev, { role: 'assistant', text: result.displayText }])
+      await addMessage({ id: crypto.randomUUID(), role: 'assistant', text: result.displayText })
       showFloating(result.displayText)
       onTurnResponse(result.result.response)
     }
@@ -76,7 +83,8 @@ export function ChatBubble({
     if (floatingTimerRef.current) clearTimeout(floatingTimerRef.current)
     const cleaned = text.replace(/^[\u201C\u201D""]+|[\u201C\u201D""]+$/g, '')
     const truncated = cleaned.length > 100 ? cleaned.slice(0, 100) + '...' : cleaned
-    const ms = Math.min(5000, Math.max(2000, cleaned.length * 50))
+    // Duration doubled (2x) for better readability
+    const ms = Math.min(10000, Math.max(4000, cleaned.length * 100))
     setFloatingDuration(ms / 1000)
     setFloatingText(truncated)
     floatingTimerRef.current = setTimeout(() => setFloatingText(null), ms)
@@ -86,99 +94,73 @@ export function ChatBubble({
 
   return (
     <>
-      {/* Speech bubble */}
       {floatingText && (
-        <div
-          className="speech-bubble"
-          key={floatingText}
-          style={{ animationDuration: `${floatingDuration}s` }}
-        >
-          {floatingText}
-        </div>
+        <SpeechBubble key={floatingText} text={floatingText} durationSeconds={floatingDuration} />
       )}
 
-      {/* Emotion reaction */}
       {emotionReaction && (
-        <div className="emotion-reaction" key={emotionReaction + Date.now()}>
-          {emotionReaction}
-        </div>
+        <EmotionReaction key={emotionReaction + Date.now()} symbol={emotionReaction} />
       )}
 
-      {/* Tool status indicator */}
       {toolStatus?.status === 'running' && (
-        <div className="tool-status">
-          <span className="tool-status-icon">&#9881;</span>
-          <span>{toolStatus.descriptionKo}...</span>
-        </div>
+        <ToolStatusIndicator descriptionKo={toolStatus.descriptionKo} />
       )}
 
-      {/* Loading indicator */}
       {(session.status === 'creating' || isProcessing) && (
         <div className="session-loading">
           <span className="dots"><span /><span /><span /></span>
         </div>
       )}
 
-      {/* Error indicator */}
       {session.status === 'error' && !settingsOpen && (
-        <div className="confirm-overlay">
-          <div className="confirm-panel">
-            <div className="confirm-icon">&#9888;</div>
-            <h3 className="confirm-title">Setup Required</h3>
-            <p className="confirm-desc">
-              {session.error || 'Could not start session'}
-            </p>
-            {onOpenSettings && (
-              <div className="confirm-actions">
-                <button className="confirm-ok-btn" onClick={onOpenSettings}>
-                  Open Settings
-                </button>
+        <SessionErrorOverlay error={session.error} onOpenSettings={onOpenSettings} />
+      )}
+
+      {/* Chat History — 3 modes: hidden / behind character / in front */}
+      {historyMode !== 'hidden' && (
+        <div
+          className={`history-overlay ${historyMode === 'front' ? 'history-overlay--active' : ''}`}
+          onClick={historyMode === 'front' ? () => setHistoryMode('behind') : undefined}
+        >
+          <div className="history-list" onClick={e => e.stopPropagation()}>
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`history-bubble history-bubble--${msg.role}`}
+              >
+                {msg.role === 'tool' && msg.toolResults ? (
+                  msg.toolResults.map((tr, j) => (
+                    <div key={j} className={`tool-result tool-result--${tr.status}`}>
+                      <span className="tool-result-icon">{tr.status === 'ok' ? '✓' : '✗'}</span>
+                      <span className="tool-result-name">{tr.descriptionKo || tr.name}</span>
+                    </div>
+                  ))
+                ) : (
+                  <span className="history-text">{msg.text}</span>
+                )}
+              </div>
+            ))}
+            {isProcessing && (
+              <div className="history-bubble history-bubble--assistant">
+                <span className="dots"><span /><span /><span /></span>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Chat history overlay */}
-      {historyOpen && (
-        <ChatHistory
-          messages={messages}
-          isProcessing={isProcessing}
-          onClose={() => setHistoryOpen(false)}
-          onOpenSettings={onOpenSettings}
-        />
-      )}
-
-      {/* Input bar */}
-      <div className="input-layer">
-        <div className="input-bar">
-          <button
-            onClick={() => setHistoryOpen(!historyOpen)}
-            className="history-btn"
-            aria-label="Toggle chat history"
-          >
-            {historyOpen ? '\u2715' : '\u2630'}
-          </button>
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.nativeEvent.isComposing && handleSend()}
-            onFocus={() => onInputFocusChange?.(true)}
-            onBlur={() => onInputFocusChange?.(false)}
-            placeholder={ready ? 'Talk to Hyori...' : 'Connecting...'}
-            className="chat-input no-drag"
-            disabled={!ready || isProcessing}
-          />
-          <button
-            onClick={handleSend}
-            className="send-btn no-drag"
-            disabled={!ready || isProcessing || !input.trim()}
-          >
-            {isProcessing ? '...' : '\u2191'}
-          </button>
-        </div>
-      </div>
+      <InputBar
+        value={input}
+        onChange={setInput}
+        onSend={handleSend}
+        onCycleHistory={() => setHistoryMode(prev =>
+          prev === 'hidden' ? 'behind' : prev === 'behind' ? 'front' : 'hidden'
+        )}
+        historyMode={historyMode}
+        onFocusChange={onInputFocusChange}
+        ready={ready}
+        isProcessing={isProcessing}
+      />
     </>
   )
 }

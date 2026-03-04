@@ -2,8 +2,8 @@
 .settings-overlay {
   position: absolute;
   inset: 0;
-  z-index: 25;
-  background: rgba(0, 0, 0, 0.5);
+  z-index: var(--z-settings);
+  background: var(--color-bg-overlay);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -25,10 +25,10 @@
   background: rgba(30, 30, 30, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border);
   border-radius: 18px;
   padding: 20px 18px;
-  color: #eee;
+  color: var(--color-text);
 }
 
 .settings-panel h2 {
@@ -48,7 +48,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #888;
+  color: var(--color-text-dim);
   margin: 0 0 10px;
 }
 
@@ -60,7 +60,7 @@
 .settings-field label {
   display: block;
   font-size: 12px;
-  color: #aaa;
+  color: var(--color-text-muted);
   margin-bottom: 4px;
 }
 
@@ -71,9 +71,9 @@
   padding: 8px 12px;
   font-size: 13px;
   background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  color: #eee;
+  color: var(--color-text);
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
@@ -103,7 +103,15 @@
 
 .settings-field input::placeholder,
 .settings-field textarea::placeholder {
-  color: #555;
+  color: var(--color-text-disabled);
+}
+
+/* ── Hint text ── */
+.settings-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-disabled);
+  margin-top: 4px;
 }
 
 /* ── Checkbox ── */
@@ -112,14 +120,14 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #eee;
+  color: var(--color-text);
   cursor: pointer;
 }
 
 .settings-checkbox input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: #2563eb;
+  accent-color: var(--color-primary);
   cursor: pointer;
 }
 
@@ -142,17 +150,17 @@
 }
 
 .settings-save-btn {
-  background: #2563eb;
+  background: var(--color-primary);
   color: #fff;
 }
 
 .settings-save-btn:hover {
-  background: #1d4ed8;
+  background: var(--color-primary-hover);
 }
 
 .settings-cancel-btn {
   background: rgba(255, 255, 255, 0.1);
-  color: #aaa;
+  color: var(--color-text-muted);
 }
 
 .settings-cancel-btn:hover {

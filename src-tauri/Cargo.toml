@@ -1,10 +1,10 @@
 [package]
-name = "tauri-hyori"
+name = "hiyori"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "tauri_hyori_lib"
+name = "tauri_hiyori_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -21,6 +21,7 @@ open = "5"
 sysinfo = "0.33"
 arboard = "3"
 dirs = "6"
+tauri-plugin-sql = { version = "2.3.2", features = ["sqlite"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc = "0.2"
