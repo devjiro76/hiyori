@@ -54,14 +54,26 @@ She's not just a chatbot. She's a desktop agent:
 ### She works with any LLM.
 Bring your own API key. OpenAI, Anthropic, Google, Groq, local models — anything OpenAI-compatible works. Your keys stay on your machine, always.
 
-## Quick Start
+## Download
+
+Grab the latest `.dmg` from the [Releases](https://github.com/devjiro76/hiyori/releases) page. Open it, drag Hiyori to Applications, done.
+
+## How to Use
+
+1. **Launch Hiyori** — she appears on your desktop, transparent and always on top.
+2. **Set up your LLM** — press `Cmd + ,` to open settings. Pick a provider (OpenAI, Anthropic, Google, Groq, or any OpenAI-compatible endpoint) and paste your API key.
+3. **Start chatting** — click on her or use the chat overlay to talk. She'll respond with matching facial expressions.
+4. **Move your mouse** — watch her eyes follow your cursor around the screen.
+5. **Ask her to do things** — "open Safari", "copy this to clipboard", "remind me in 10 minutes". She's a desktop agent, not just a chatbot.
+
+> Your API key never leaves your machine. All LLM calls happen locally.
+
+## Build from Source
 
 ```bash
 pnpm install
-pnpm tauri:dev
+pnpm tauri:build
 ```
-
-On first launch, press `Cmd + ,` to set your LLM provider and API key.
 
 ### Requirements
 
