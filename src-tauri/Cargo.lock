@@ -1799,6 +1799,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
+name = "hiyori"
+version = "0.1.0"
+dependencies = [
+ "arboard",
+ "cocoa",
+ "core-foundation 0.9.4",
+ "dirs",
+ "objc",
+ "objc-foundation",
+ "open",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-http",
+ "tauri-plugin-notification",
+ "tauri-plugin-shell",
+ "tauri-plugin-sql",
+]
+
+[[package]]
 name = "hkdf"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4785,28 +4807,6 @@ dependencies = [
  "url",
  "uuid",
  "walkdir",
-]
-
-[[package]]
-name = "tauri-hyori"
-version = "0.1.0"
-dependencies = [
- "arboard",
- "cocoa",
- "core-foundation 0.9.4",
- "dirs",
- "objc",
- "objc-foundation",
- "open",
- "serde",
- "serde_json",
- "sysinfo",
- "tauri",
- "tauri-build",
- "tauri-plugin-http",
- "tauri-plugin-notification",
- "tauri-plugin-shell",
- "tauri-plugin-sql",
 ]
 
 [[package]]

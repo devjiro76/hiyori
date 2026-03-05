@@ -453,3 +453,36 @@
   background: rgba(255, 255, 255, 0.15);
   border-radius: 2px;
 }
+
+/* ── Voice input indicator ── */
+.voice-indicator {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-chat-ui);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(220, 40, 40, 0.85);
+  border-radius: 12px;
+  pointer-events: none;
+  animation: voicePulse 1.5s ease-in-out infinite;
+}
+
+.voice-indicator-dot {
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  animation: voicePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes voicePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

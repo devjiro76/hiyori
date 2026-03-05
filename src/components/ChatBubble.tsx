@@ -13,6 +13,7 @@ import { InputBar } from './InputBar'
 interface ChatBubbleProps {
   session: SessionState
   isProcessing: boolean
+  streamingText?: string | null
   onSend: (message: string) => Promise<{
     result: { text: string; response: AgentResponse }
     displayText: string
@@ -25,11 +26,14 @@ interface ChatBubbleProps {
   onInputFocusChange?: (focused: boolean) => void
   onOpenSettings?: () => void
   settingsOpen?: boolean
+  onSpeak?: (text: string) => void
+  isListening?: boolean
 }
 
 export function ChatBubble({
   session,
   isProcessing,
+  streamingText,
   onSend,
   onTurnResponse,
   emotionReaction,
@@ -39,14 +43,26 @@ export function ChatBubble({
   onInputFocusChange,
   onOpenSettings,
   settingsOpen,
+  onSpeak,
+  isListening,
 }: ChatBubbleProps) {
   const [input, setInput] = useState('')
   const [historyMode, setHistoryMode] = useState<'hidden' | 'behind' | 'front'>('hidden')
   const { messages, addMessage } = useChatHistory()
+  const historyListRef = useRef<HTMLDivElement>(null)
   const [floatingText, setFloatingText] = useState<string | null>(null)
   const [floatingDuration, setFloatingDuration] = useState(3.5)
   const floatingTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const reactionTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  // Auto-scroll chat history to bottom
+  useEffect(() => {
+    // Small delay to ensure DOM is rendered after historyMode change
+    requestAnimationFrame(() => {
+      const el = historyListRef.current
+      if (el) el.scrollTop = el.scrollHeight
+    })
+  }, [messages, isProcessing, historyMode])
 
   useEffect(() => {
     if (!emotionReaction) return
@@ -70,12 +86,13 @@ export function ChatBubble({
           id: crypto.randomUUID(),
           role: 'tool',
           text: '',
-          toolResults: lastToolResults.map(t => ({ name: t.name, status: t.status, descriptionKo: t.descriptionKo }))
+          toolResults: lastToolResults.map(t => ({ name: t.name, status: t.success ? 'ok' as const : 'fail' as const, descriptionKo: t.descriptionKo }))
         })
       }
       await addMessage({ id: crypto.randomUUID(), role: 'assistant', text: result.displayText })
       showFloating(result.displayText)
       onTurnResponse(result.result.response)
+      onSpeak?.(result.displayText)
     }
   }
 
@@ -102,11 +119,22 @@ export function ChatBubble({
         <EmotionReaction key={emotionReaction + Date.now()} symbol={emotionReaction} />
       )}
 
+      {isListening && (
+        <div className="voice-indicator">
+          <span className="voice-indicator-dot" />
+          <span>듣는 중...</span>
+        </div>
+      )}
+
       {toolStatus?.status === 'running' && (
         <ToolStatusIndicator descriptionKo={toolStatus.descriptionKo} />
       )}
 
-      {(session.status === 'creating' || isProcessing) && (
+      {streamingText != null && streamingText.length > 0 && (
+        <SpeechBubble key="streaming" text={streamingText} durationSeconds={999} />
+      )}
+
+      {(session.status === 'creating' || (isProcessing && !streamingText)) && (
         <div className="session-loading">
           <span className="dots"><span /><span /><span /></span>
         </div>
@@ -122,7 +150,7 @@ export function ChatBubble({
           className={`history-overlay ${historyMode === 'front' ? 'history-overlay--active' : ''}`}
           onClick={historyMode === 'front' ? () => setHistoryMode('behind') : undefined}
         >
-          <div className="history-list" onClick={e => e.stopPropagation()}>
+          <div ref={historyListRef} className="history-list" onClick={e => e.stopPropagation()}>
             {messages.map((msg) => (
               <div
                 key={msg.id}

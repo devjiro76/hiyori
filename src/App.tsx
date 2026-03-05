@@ -3,10 +3,12 @@ import { TOOL_STATUS_CLEAR_DELAY_MS } from './lib/constants'
 import { hyoriCharacter } from './characters/hyori'
 import { Live2DViewer } from './components/Live2DViewer'
 import { ChatBubble } from './components/ChatBubble'
-import { SettingsPanel } from './components/SettingsPanel'
+import { openSettingsWindow } from './lib/settings-window'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { useSession } from './hooks/useSession'
 import { useWindowBehavior } from './hooks/useWindowBehavior'
+import { useTTS } from './hooks/useTTS'
+import { useVoiceInput } from './hooks/useVoiceInput'
 import { applyEmotionToLive2D } from './lib/live2d/emotion-controller'
 import type { Live2DController } from './hooks/useLive2D'
 import type { AgentResponse } from './lib/types'
@@ -27,7 +29,6 @@ export default function App() {
   const prevEmotionRef = useRef<string | null>(null)
 
   const {
-    alwaysOnTop, settingsOpen, setSettingsOpen,
     showResizeCorners, setInputFocused,
     handleToggleAlwaysOnTop,
   } = useWindowBehavior()
@@ -53,17 +54,50 @@ export default function App() {
   }, [])
 
   const {
-    session, isProcessing,
-    llmConfig, setLlmConfig,
+    session, isProcessing, streamingText,
+    setLlmConfig,
     lastToolResults,
     sendMessage,
     createSession,
   } = useSession(confirmFn, onToolStatus)
 
+  const { setTtsConfig, speak } = useTTS()
+
+  const handleVoiceTranscript = useCallback(async (text: string) => {
+    if (session.status !== 'active' || isProcessing) return
+    const result = await sendMessage(text)
+    if (result && 'result' in result) {
+      handleTurnResponse(result.result.response)
+      speak(result.displayText)
+    }
+  }, [session.status, isProcessing, sendMessage, speak])
+
+  const { setVoiceConfig, isListening } = useVoiceInput(handleVoiceTranscript)
+
   // Auto-create session on mount and when config changes
   useEffect(() => { createSession() }, [createSession])
 
-  function handleTurnResponse(response: AgentResponse) {
+  // Listen for settings changes from the settings window (localStorage)
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === 'tauri-hyori-llm-config' && e.newValue) {
+        try { setLlmConfig(JSON.parse(e.newValue)) } catch { /* ignore */ }
+      }
+      if (e.key === 'tauri-hyori-tts-config' && e.newValue) {
+        try { setTtsConfig(JSON.parse(e.newValue)) } catch { /* ignore */ }
+      }
+      if (e.key === 'tauri-hyori-voice-config' && e.newValue) {
+        try { setVoiceConfig(JSON.parse(e.newValue)) } catch { /* ignore */ }
+      }
+      if (e.key === 'tauri-hyori-always-on-top' && e.newValue) {
+        try { handleToggleAlwaysOnTop(JSON.parse(e.newValue)) } catch { /* ignore */ }
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [setLlmConfig, setTtsConfig, setVoiceConfig, handleToggleAlwaysOnTop])
+
+  const handleTurnResponse = useCallback((response: AgentResponse) => {
     if (!controller) return
     const { newEmotion } = applyEmotionToLive2D(controller, response, prevEmotionRef.current)
 
@@ -71,7 +105,7 @@ export default function App() {
       setEmotionReaction(EMOTION_SYMBOLS[newEmotion] ?? '!')
     }
     prevEmotionRef.current = newEmotion
-  }
+  }, [controller])
 
   return (
     <div className="app-root">
@@ -85,6 +119,7 @@ export default function App() {
       <ChatBubble
         session={session}
         isProcessing={isProcessing}
+        streamingText={streamingText}
         onSend={sendMessage}
         onTurnResponse={handleTurnResponse}
         emotionReaction={emotionReaction}
@@ -92,8 +127,10 @@ export default function App() {
         toolStatus={toolStatus}
         lastToolResults={lastToolResults}
         onInputFocusChange={setInputFocused}
-        onOpenSettings={() => setSettingsOpen(true)}
-        settingsOpen={settingsOpen}
+        onOpenSettings={() => openSettingsWindow()}
+        settingsOpen={false}
+        onSpeak={speak}
+        isListening={isListening}
       />
       {confirmPending && (
         <ConfirmDialog
@@ -107,17 +144,6 @@ export default function App() {
             confirmPending.resolve(false)
             setConfirmPending(null)
           }}
-        />
-      )}
-      {settingsOpen && (
-        <SettingsPanel
-          llmConfig={llmConfig}
-          onSave={(llm) => {
-            setLlmConfig(llm)
-          }}
-          onClose={() => setSettingsOpen(false)}
-          alwaysOnTop={alwaysOnTop}
-          onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
         />
       )}
     </div>

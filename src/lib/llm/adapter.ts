@@ -23,6 +23,10 @@ export interface GenerateTextOptions {
   maxTokens?: number
 }
 
+export interface StreamTextOptions extends GenerateTextOptions {
+  onDelta?: (text: string) => void
+}
+
 export interface GenerateObjectOptions<T> {
   model?: string
   system?: string
@@ -34,6 +38,7 @@ export interface GenerateObjectOptions<T> {
 export interface LLMAdapter {
   generateText(options: GenerateTextOptions): Promise<{ text: string }>
   generateObject<T>(options: GenerateObjectOptions<T>): Promise<{ object: T }>
+  streamText(options: StreamTextOptions): Promise<{ text: string }>
 }
 
 export interface LlmConfig {
@@ -81,6 +86,60 @@ export function createDesktopAdapter(config: LlmConfig): LLMAdapter | null {
 
       const data = await res.json() as any
       return { text: data.choices[0].message.content }
+    },
+
+    async streamText(options: StreamTextOptions): Promise<{ text: string }> {
+      // Use native fetch for real streaming (Tauri's fetch buffers the response)
+      const res = await globalThis.fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: modelId,
+          messages: buildMessages(options.system, options.messages),
+          temperature: options.temperature,
+          max_tokens: options.maxTokens,
+          stream: true,
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: { message: res.statusText } }))
+        throw new Error((err as any).error?.message || `API error ${res.status}`)
+      }
+
+      const reader = res.body?.getReader()
+      if (!reader) throw new Error('No response body')
+
+      const decoder = new TextDecoder()
+      let full = ''
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed || !trimmed.startsWith('data: ')) continue
+          const data = trimmed.slice(6)
+          if (data === '[DONE]') continue
+
+          try {
+            const parsed = JSON.parse(data) as any
+            const delta = parsed.choices?.[0]?.delta?.content
+            if (delta) {
+              full += delta
+              options.onDelta?.(delta)
+            }
+          } catch { /* skip malformed chunks */ }
+        }
+      }
+
+      return { text: full }
     },
 
     async generateObject<T>(options: GenerateObjectOptions<T>): Promise<{ object: T }> {

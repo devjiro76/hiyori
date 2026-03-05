@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react'
 import { LLM_PROVIDERS } from '../lib/llm/providers'
 import type { LlmConfig } from '../lib/llm/adapter'
+import type { TTSConfig, TTSProvider } from '../lib/tts/tts-adapter'
+import type { VoiceInputConfig } from '../hooks/useVoiceInput'
 import { DEFAULT_MAX_HISTORY_TURNS } from '../lib/constants'
 import './SettingsPanel.css'
+
+const TTS_PROVIDERS: { id: TTSProvider; name: string }[] = [
+  { id: 'none', name: 'Off' },
+  { id: 'web-speech', name: 'Web Speech API (built-in)' },
+  { id: 'openai-tts', name: 'OpenAI TTS' },
+  { id: 'elevenlabs', name: 'ElevenLabs' },
+]
 
 interface SettingsPanelProps {
   llmConfig: LlmConfig
@@ -10,6 +19,11 @@ interface SettingsPanelProps {
   onClose: () => void
   alwaysOnTop: boolean
   onToggleAlwaysOnTop: (value: boolean) => void
+  ttsConfig?: TTSConfig
+  onSaveTts?: (config: TTSConfig) => void
+  voiceConfig?: VoiceInputConfig
+  onSaveVoice?: (config: VoiceInputConfig) => void
+  voiceSupported?: boolean
 }
 
 export function SettingsPanel({
@@ -18,12 +32,27 @@ export function SettingsPanel({
   onClose,
   alwaysOnTop,
   onToggleAlwaysOnTop,
+  ttsConfig,
+  onSaveTts,
+  voiceConfig,
+  onSaveVoice,
+  voiceSupported,
 }: SettingsPanelProps) {
   const [provider, setProvider] = useState(llmConfig.provider)
   const [model, setModel] = useState(llmConfig.model ?? '')
   const [apiKey, setApiKey] = useState(llmConfig.apiKey ?? '')
   const [baseUrl, setBaseUrl] = useState(llmConfig.baseUrl ?? '')
   const [maxHistoryTurns, setMaxHistoryTurns] = useState(llmConfig.maxHistoryTurns ?? DEFAULT_MAX_HISTORY_TURNS)
+
+  // TTS state
+  const [ttsProvider, setTtsProvider] = useState<TTSProvider>(ttsConfig?.provider ?? 'none')
+  const [ttsApiKey, setTtsApiKey] = useState(ttsConfig?.apiKey ?? '')
+  const [ttsVoice, setTtsVoice] = useState(ttsConfig?.voice ?? '')
+  const [ttsModel, setTtsModel] = useState(ttsConfig?.model ?? '')
+
+  // Voice input state
+  const [voiceEnabled, setVoiceEnabled] = useState(voiceConfig?.enabled ?? false)
+  const [voiceApiKey, setVoiceApiKey] = useState(voiceConfig?.apiKey ?? '')
 
   const providerDef = LLM_PROVIDERS.find(p => p.id === provider)
 
@@ -40,6 +69,8 @@ export function SettingsPanel({
 
   function handleSave() {
     onSave({ provider, model, apiKey: apiKey || undefined, baseUrl: baseUrl || undefined, maxHistoryTurns })
+    onSaveTts?.({ provider: ttsProvider, apiKey: ttsApiKey || undefined, voice: ttsVoice || undefined, model: ttsModel || undefined })
+    onSaveVoice?.({ enabled: voiceEnabled, apiKey: voiceApiKey || undefined })
     onClose()
   }
 
@@ -131,6 +162,58 @@ export function SettingsPanel({
             />
             <span className="settings-hint">LLM에 보낼 대화 턴 수 (1턴 = 질문+답변)</span>
           </div>
+        </div>
+
+        {/* TTS Section */}
+        <div className="settings-section">
+          <h3>Voice Output (TTS)</h3>
+          <div className="settings-field">
+            <label>Provider</label>
+            <select value={ttsProvider} onChange={e => setTtsProvider(e.target.value as TTSProvider)}>
+              {TTS_PROVIDERS.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {(ttsProvider === 'openai-tts' || ttsProvider === 'elevenlabs') && (
+            <>
+              <div className="settings-field">
+                <label>API Key</label>
+                <input type="password" value={ttsApiKey} onChange={e => setTtsApiKey(e.target.value)} placeholder="TTS API Key" />
+              </div>
+              <div className="settings-field">
+                <label>Voice</label>
+                <input type="text" value={ttsVoice} onChange={e => setTtsVoice(e.target.value)} placeholder={ttsProvider === 'openai-tts' ? 'nova' : 'Voice ID'} />
+              </div>
+              <div className="settings-field">
+                <label>Model</label>
+                <input type="text" value={ttsModel} onChange={e => setTtsModel(e.target.value)} placeholder={ttsProvider === 'openai-tts' ? 'tts-1' : 'eleven_multilingual_v2'} />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Voice Input Section */}
+        <div className="settings-section">
+          <h3>Voice Input (STT)</h3>
+          {voiceSupported ? (
+            <>
+              <label className="settings-checkbox">
+                <input type="checkbox" checked={voiceEnabled} onChange={e => setVoiceEnabled(e.target.checked)} />
+                <span>Enable voice input (Whisper)</span>
+              </label>
+              {voiceEnabled && (
+                <div className="settings-field">
+                  <label>OpenAI API Key</label>
+                  <input type="password" value={voiceApiKey} onChange={e => setVoiceApiKey(e.target.value)} placeholder="sk-..." />
+                  <span className="settings-hint">Whisper STT 사용. LLM과 같은 키 사용 가능.</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <span className="settings-hint">Voice input is not supported in this browser.</span>
+          )}
         </div>
 
         {/* Window Section */}

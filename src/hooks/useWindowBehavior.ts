@@ -77,24 +77,41 @@ export function useWindowBehavior(): WindowBehaviorState {
     let startScreenY = 0
     let startW = 0
 
-    function isTransparentPixel(clientX: number, clientY: number): boolean {
+    let cachedGl: WebGLRenderingContext | WebGL2RenderingContext | null = null
+    let cachedCanvas: HTMLCanvasElement | null = null
+
+    function getGl(): { gl: WebGLRenderingContext | WebGL2RenderingContext; canvas: HTMLCanvasElement } | null {
+      if (cachedGl && cachedCanvas) return { gl: cachedGl, canvas: cachedCanvas }
       const canvas = document.querySelector('canvas') as HTMLCanvasElement | null
-      if (!canvas) return false
+      if (!canvas) return null
       const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl')
-      if (!gl) return false
+      if (!gl) return null
+      cachedGl = gl
+      cachedCanvas = canvas
+      return { gl, canvas }
+    }
+
+    function isTransparentPixel(clientX: number, clientY: number): boolean {
+      const ctx = getGl()
+      if (!ctx) return false
+      const { gl, canvas } = ctx
       const rect = canvas.getBoundingClientRect()
       const dpr = window.devicePixelRatio || 1
       const x = Math.round((clientX - rect.left) * dpr)
-      const y = Math.round((rect.height - (clientY - rect.top)) * dpr) // flip Y for WebGL
+      const y = Math.round((rect.height - (clientY - rect.top)) * dpr)
+      if (x < 0 || y < 0 || x >= gl.drawingBufferWidth || y >= gl.drawingBufferHeight) return false
       const pixel = new Uint8Array(4)
       gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)
       return pixel[3] < 10
     }
 
     function setClickThrough(enable: boolean) {
-      ignoring = enable
-      win.setIgnoreCursorEvents(enable)
+      if (enable === ignoring) return
+
       if (enable) {
+        ignoring = true
+        win.setIgnoreCursorEvents(true)
+        // Recovery: periodically check if we should still be ignoring
         if (!recoveryTimer) {
           recoveryTimer = setInterval(() => {
             win.setIgnoreCursorEvents(false)
@@ -102,6 +119,8 @@ export function useWindowBehavior(): WindowBehaviorState {
           }, 300)
         }
       } else {
+        ignoring = false
+        win.setIgnoreCursorEvents(false)
         if (recoveryTimer) { clearInterval(recoveryTimer); recoveryTimer = null }
       }
     }

@@ -57,6 +57,7 @@ export function useSession(
   const [turnHistory, setTurnHistory] = useState<TurnEntry[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [lastToolResults, setLastToolResults] = useState<ToolResult[]>([])
+  const [streamingText, setStreamingText] = useState<string | null>(null)
   const turnIdRef = useRef(0)
   const chatRef = useRef<DirectChat | null>(null)
   const appliedConfigRef = useRef<string>('')
@@ -124,8 +125,13 @@ export function useSession(
         setLastToolResults([])
       }
 
-      // Get LLM response
-      const chatResult = await chat.chat(agentMessage, { history })
+      // Get LLM response (streaming)
+      setStreamingText('')
+      const chatResult = await chat.streamChat(agentMessage, {
+        history,
+        onDelta: (delta) => setStreamingText(prev => (prev ?? '') + delta),
+      })
+      setStreamingText(null)
 
       const entry: TurnEntry = {
         id: ++turnIdRef.current,
@@ -159,6 +165,7 @@ export function useSession(
     setLlmConfig,
     turnHistory,
     isProcessing,
+    streamingText,
     lastToolResults,
     createSession,
     sendMessage,
