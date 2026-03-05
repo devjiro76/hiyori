@@ -20,9 +20,18 @@ export interface ChatResult {
   response?: AgentResponse
 }
 
+export interface DynamicContext {
+  relationshipLevel?: string
+  relationshipSuffix?: string
+  userFacts?: string
+  ambientContext?: string
+  emotionalContext?: string
+}
+
 export interface StreamChatOptions {
   history?: Array<{ role: 'user' | 'assistant'; content: string }>
   onDelta?: (text: string) => void
+  dynamicContext?: DynamicContext
 }
 
 /**
@@ -40,17 +49,33 @@ export class DirectChat {
     }
   }
 
+  private buildSystemPrompt(ctx?: DynamicContext): string {
+    const sections = [
+      `You are Hyori, a friendly Live2D desktop mascot.
+IMPORTANT: Always reply in the same language the user writes in. If the user writes in English, reply in English. If Korean, reply in Korean.`,
+      HYORI_CONSUMER_SUFFIX,
+    ]
+
+    if (ctx?.relationshipSuffix) sections.push(ctx.relationshipSuffix)
+    if (ctx?.userFacts) sections.push(`## What You Know About the User\n${ctx.userFacts}`)
+    if (ctx?.emotionalContext) sections.push(`## Your Current Mood\n${ctx.emotionalContext}`)
+    if (ctx?.ambientContext) sections.push(`## Current Context\n${ctx.ambientContext}`)
+
+    sections.push('Respond naturally and warmly. Keep responses concise (1-2 sentences usually).')
+    return sections.join('\n\n')
+  }
+
   /**
    * Send a message and get a response.
    */
   async chat(userMessage: string, options?: {
     history?: Array<{ role: 'user' | 'assistant'; content: string }>
+    dynamicContext?: DynamicContext
   }): Promise<ChatResult> {
     if (!this.adapter) {
       throw new Error('LLM adapter not initialized')
     }
 
-    // Build message history for context
     const messages: Message[] = [
       ...(options?.history ?? []).map(msg => ({
         role: msg.role as 'user' | 'assistant',
@@ -59,13 +84,7 @@ export class DirectChat {
       { role: 'user' as const, content: userMessage },
     ]
 
-    // System prompt: language instruction in English at top to avoid Korean bias
-    const systemPrompt = `You are Hyori, a friendly Live2D desktop mascot.
-IMPORTANT: Always reply in the same language the user writes in. If the user writes in English, reply in English. If Korean, reply in Korean.
-
-${HYORI_CONSUMER_SUFFIX}
-
-Respond naturally and warmly. Keep responses concise (1-2 sentences usually).`
+    const systemPrompt = this.buildSystemPrompt(options?.dynamicContext)
 
     try {
       const result = await this.adapter.generateText({
@@ -99,12 +118,7 @@ Respond naturally and warmly. Keep responses concise (1-2 sentences usually).`
       { role: 'user' as const, content: userMessage },
     ]
 
-    const systemPrompt = `You are Hyori, a friendly Live2D desktop mascot.
-IMPORTANT: Always reply in the same language the user writes in. If the user writes in English, reply in English. If Korean, reply in Korean.
-
-${HYORI_CONSUMER_SUFFIX}
-
-Respond naturally and warmly. Keep responses concise (1-2 sentences usually).`
+    const systemPrompt = this.buildSystemPrompt(options?.dynamicContext)
 
     try {
       const result = await this.adapter.streamText({

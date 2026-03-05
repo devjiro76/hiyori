@@ -1,10 +1,16 @@
 import { useState, useCallback, useRef } from 'react'
-import { createDirectChat, type DirectChat, type ChatResult } from '../lib/llm/direct-chat'
+import { createDirectChat, type DirectChat, type ChatResult, type DynamicContext } from '../lib/llm/direct-chat'
 import type { LlmConfig } from '../lib/llm/adapter'
 import { routeAgentRequest, type ConfirmFn, type ToolStatusFn, type ToolResult } from '../lib/agent'
 import { createMolrooClient, type MolrooClient } from '../lib/molroo/client'
 import type { MolrooConfig } from '../components/SettingsPanel'
 import { DEFAULT_MAX_HISTORY_TURNS } from '../lib/constants'
+import { recordInteraction, applyDecay, getDaysSinceFirst } from '../lib/relationship/engine'
+import { checkMilestones } from '../lib/relationship/milestones'
+import { getRelationship, type RelationshipData } from '../lib/db/relationship'
+import { getFactsForPrompt } from '../lib/db/user-facts'
+import { extractAndSaveFacts } from '../lib/llm/fact-extractor'
+import { getPersonaSuffix } from '../characters/hyori/persona'
 
 export type { LlmConfig } from '../lib/llm/adapter'
 
@@ -18,6 +24,25 @@ export interface TurnEntry {
   userMessage: string
   result: ChatResult
   timestamp: number
+}
+
+export interface Milestone {
+  type: string
+  value: string
+  message: string
+  emotion: string
+}
+
+export interface AmbientContextInput {
+  currentApp: string | null
+  timeOfDay: string
+  hourOfDay: number
+  idleMinutes: number
+}
+
+export interface EmotionContextInput {
+  emotion: string
+  intensity: number
 }
 
 const INITIAL_SESSION: SessionState = {
@@ -60,6 +85,55 @@ function loadMolrooConfig(): MolrooConfig {
   return { enabled: false }
 }
 
+async function buildDynamicContext(
+  ambientInput?: AmbientContextInput | null,
+  emotionInput?: EmotionContextInput | null,
+): Promise<DynamicContext> {
+  const ctx: DynamicContext = {}
+
+  try {
+    // Relationship
+    const rel = await getRelationship()
+    ctx.relationshipLevel = rel.level
+
+    // User facts for prompt
+    const facts = await getFactsForPrompt(500)
+
+    // Find user name from facts
+    let userName: string | undefined
+    if (facts.includes('name:')) {
+      const match = facts.match(/name:\s*(.+)/)
+      if (match) userName = match[1].trim()
+    }
+
+    ctx.relationshipSuffix = getPersonaSuffix(rel.level, userName, rel.streakDays)
+    if (facts) ctx.userFacts = facts
+
+    // Ambient context
+    if (ambientInput) {
+      const parts: string[] = []
+      if (ambientInput.currentApp) parts.push(`User is currently using ${ambientInput.currentApp}.`)
+      parts.push(`It's ${ambientInput.timeOfDay} (${ambientInput.hourOfDay}:00).`)
+      if (ambientInput.idleMinutes > 5) parts.push(`User has been idle for ${ambientInput.idleMinutes} minutes.`)
+
+      const rel2 = await getRelationship()
+      const days = getDaysSinceFirst(rel2.firstInteraction)
+      if (days > 1) parts.push(`Today is interaction day #${days} (streak: ${rel2.streakDays} days).`)
+
+      ctx.ambientContext = parts.join(' ')
+    }
+
+    // Emotional context
+    if (emotionInput && emotionInput.emotion !== 'calm') {
+      ctx.emotionalContext = `Your current mood is ${emotionInput.emotion} (intensity: ${emotionInput.intensity.toFixed(2)}). Respond in a way consistent with this mood.`
+    }
+  } catch (err) {
+    console.warn('[useSession] buildDynamicContext error:', err)
+  }
+
+  return ctx
+}
+
 export function useSession(
   confirmFn?: ConfirmFn,
   onToolStatus?: ToolStatusFn,
@@ -71,11 +145,15 @@ export function useSession(
   const [lastToolResults, setLastToolResults] = useState<ToolResult[]>([])
   const [streamingText, setStreamingText] = useState<string | null>(null)
   const [molrooConfig, setMolrooConfigState] = useState<MolrooConfig>(loadMolrooConfig)
+  const [pendingMilestones, setPendingMilestones] = useState<Milestone[]>([])
+  const [relationshipData, setRelationshipData] = useState<RelationshipData | null>(null)
   const turnIdRef = useRef(0)
   const chatRef = useRef<DirectChat | null>(null)
   const molrooRef = useRef<MolrooClient | null>(null)
   const molrooKeyRef = useRef<string>('')
   const appliedConfigRef = useRef<string>('')
+  const ambientRef = useRef<AmbientContextInput | null>(null)
+  const emotionRef = useRef<EmotionContextInput | null>(null)
 
   const setLlmConfig = useCallback((config: LlmConfig) => {
     setLlmConfigState(config)
@@ -85,6 +163,14 @@ export function useSession(
   const setMolrooConfig = useCallback((config: MolrooConfig) => {
     setMolrooConfigState(config)
     localStorage.setItem(LS_MOLROO, JSON.stringify(config))
+  }, [])
+
+  const setAmbientContext = useCallback((ctx: AmbientContextInput) => {
+    ambientRef.current = ctx
+  }, [])
+
+  const setEmotionContext = useCallback((ctx: EmotionContextInput) => {
+    emotionRef.current = ctx
   }, [])
 
   const createSession = useCallback(async () => {
@@ -100,12 +186,25 @@ export function useSession(
       setTurnHistory([])
       turnIdRef.current = 0
       appliedConfigRef.current = JSON.stringify(llmConfig)
+
+      // Apply relationship decay on session start
+      try {
+        await applyDecay()
+        const rel = await getRelationship()
+        setRelationshipData(rel)
+      } catch { /* DB not ready — ok */ }
     } catch (err) {
       console.error('[useSession] createSession error:', err)
       const msg = err instanceof Error ? err.message : 'Failed to create session'
       setSession({ status: 'error', error: msg })
     }
   }, [llmConfig])
+
+  const consumeMilestones = useCallback((): Milestone[] => {
+    const ms = pendingMilestones
+    setPendingMilestones([])
+    return ms
+  }, [pendingMilestones])
 
   const sendMessage = useCallback(async (message: string): Promise<{
     result: ChatResult
@@ -127,7 +226,7 @@ export function useSession(
       const chat = chatRef.current
       if (!chat) throw new Error('Chat not initialized')
 
-      // Build conversation history (limited by maxHistoryTurns)
+      // Build conversation history
       const maxTurns = llmConfig.maxHistoryTurns ?? DEFAULT_MAX_HISTORY_TURNS
       const recentTurns = turnHistory.slice(-maxTurns)
       const history = recentTurns.map(t => [
@@ -135,7 +234,7 @@ export function useSession(
         { role: 'assistant' as const, content: t.result.text },
       ]).flat()
 
-      // Agent routing: check if user wants a desktop action
+      // Agent routing
       let agentMessage = message
       const agentResult = await routeAgentRequest(llmConfig, message, history, confirmFn, onToolStatus)
       if (agentResult.toolsUsed) {
@@ -145,11 +244,18 @@ export function useSession(
         setLastToolResults([])
       }
 
+      // Build dynamic context
+      const dynamicContext = await buildDynamicContext(
+        ambientRef.current,
+        emotionRef.current,
+      )
+
       // Get LLM response (streaming)
       setStreamingText('')
       const chatResult = await chat.streamChat(agentMessage, {
         history,
         onDelta: (delta) => setStreamingText(prev => (prev ?? '') + delta),
+        dynamicContext,
       })
       setStreamingText(null)
 
@@ -166,6 +272,23 @@ export function useSession(
           console.warn('[useSession] Molroo perceive failed:', err)
         }
       }
+
+      // Relationship update (non-blocking)
+      try {
+        const update = await recordInteraction()
+        setRelationshipData(update.data)
+        const milestones = await checkMilestones(
+          update.data, update.levelChanged, update.previousLevel,
+        )
+        if (milestones.length > 0) {
+          setPendingMilestones(prev => [...prev, ...milestones])
+        }
+      } catch (err) {
+        console.warn('[useSession] Relationship update failed:', err)
+      }
+
+      // Fact extraction (non-blocking, fire-and-forget)
+      extractAndSaveFacts(llmConfig, message, chatResult.text).catch(() => {})
 
       const entry: TurnEntry = {
         id: ++turnIdRef.current,
@@ -184,7 +307,7 @@ export function useSession(
     } finally {
       setIsProcessing(false)
     }
-  }, [session.status, isProcessing, llmConfig, turnHistory, confirmFn, onToolStatus])
+  }, [session.status, isProcessing, llmConfig, turnHistory, molrooConfig, confirmFn, onToolStatus])
 
   const reset = useCallback(() => {
     chatRef.current = null
@@ -206,5 +329,9 @@ export function useSession(
     createSession,
     sendMessage,
     reset,
+    setAmbientContext,
+    setEmotionContext,
+    consumeMilestones,
+    relationshipData,
   }
 }

@@ -19,6 +19,7 @@ pub fn run() {
             commands::clipboard_write,
             commands::open_path,
             commands::run_shell,
+            commands::get_frontmost_app,
             commands::get_global_mouse_position,
         ])
         .run(tauri::generate_context!())

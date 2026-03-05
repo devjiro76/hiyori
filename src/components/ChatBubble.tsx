@@ -28,6 +28,8 @@ interface ChatBubbleProps {
   settingsOpen?: boolean
   onSpeak?: (text: string) => void
   isListening?: boolean
+  idleFloatingText?: string | null
+  onResetIdle?: () => void
 }
 
 export function ChatBubble({
@@ -45,6 +47,8 @@ export function ChatBubble({
   settingsOpen,
   onSpeak,
   isListening,
+  idleFloatingText,
+  onResetIdle,
 }: ChatBubbleProps) {
   const [input, setInput] = useState('')
   const [historyMode, setHistoryMode] = useState<'hidden' | 'behind' | 'front'>('hidden')
@@ -73,6 +77,7 @@ export function ChatBubble({
   async function handleSend() {
     if (!input.trim() || isProcessing || session.status !== 'active') return
     const userMsg = input.trim()
+    onResetIdle?.()
     await addMessage({ id: crypto.randomUUID(), role: 'user', text: userMsg })
     setInput('')
 
@@ -127,6 +132,10 @@ export function ChatBubble({
 
       {toolStatus?.status === 'running' && (
         <ToolStatusIndicator descriptionKo={toolStatus.descriptionKo} />
+      )}
+
+      {idleFloatingText && !floatingText && !streamingText && (
+        <SpeechBubble key={'idle-' + idleFloatingText} text={idleFloatingText} durationSeconds={4} />
       )}
 
       {streamingText != null && streamingText.length > 0 && (

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import Database from '@tauri-apps/plugin-sql'
+import { getDB } from '../lib/db/index'
+import type Database from '@tauri-apps/plugin-sql'
 
 export interface ChatMessage {
   id: string
@@ -7,29 +8,6 @@ export interface ChatMessage {
   text: string
   toolResults?: { name: string; status: 'ok' | 'fail'; descriptionKo?: string }[]
   createdAt: string
-}
-
-let dbInstance: Database | null = null
-let initPromise: Promise<Database> | null = null
-
-async function initDB(): Promise<Database> {
-  if (dbInstance) return dbInstance
-  if (initPromise) return initPromise
-
-  initPromise = Database.load('sqlite:chat_history.db').then(db => {
-    dbInstance = db
-    return db.execute(`
-      CREATE TABLE IF NOT EXISTS messages (
-        id TEXT PRIMARY KEY,
-        role TEXT NOT NULL,
-        text TEXT NOT NULL,
-        tool_results TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `).then(() => db)
-  })
-
-  return initPromise
 }
 
 export function useChatHistory() {
@@ -43,12 +21,10 @@ export function useChatHistory() {
     let mounted = true
     setIsLoading(true)
     setError(null)
-    console.log('[useChatHistory] Loading messages...')
 
-    initDB().then(db => {
+    getDB().then(db => {
       if (!mounted) return
       dbRef.current = db
-      console.log('[useChatHistory] DB initialized')
       return db.select<{
         id: string
         role: string
@@ -60,7 +36,6 @@ export function useChatHistory() {
       )
     }).then(rows => {
       if (!mounted) return
-      console.log('[useChatHistory] Loaded rows:', rows?.length || 0)
       const parsed: ChatMessage[] = (rows || []).map(row => ({
         id: row.id,
         role: row.role as 'user' | 'assistant' | 'tool',
@@ -81,7 +56,7 @@ export function useChatHistory() {
 
   const addMessage = useCallback(async (msg: Omit<ChatMessage, 'createdAt'>) => {
     try {
-      const db = dbRef.current || await initDB()
+      const db = dbRef.current || await getDB()
       await db.execute(
         'INSERT INTO messages (id, role, text, tool_results) VALUES ($1, $2, $3, $4)',
         [msg.id, msg.role, msg.text, msg.toolResults ? JSON.stringify(msg.toolResults) : null]
@@ -94,7 +69,7 @@ export function useChatHistory() {
 
   const clearHistory = useCallback(async () => {
     try {
-      const db = dbRef.current || await initDB()
+      const db = dbRef.current || await getDB()
       await db.execute('DELETE FROM messages')
       setMessages([])
     } catch (err) {

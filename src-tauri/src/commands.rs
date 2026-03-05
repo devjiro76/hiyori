@@ -193,6 +193,34 @@ pub fn run_shell(command: String) -> CommandResult {
     }
 }
 
+/// Get the frontmost application name (macOS only).
+#[tauri::command]
+pub fn get_frontmost_app() -> CommandResult {
+    #[cfg(target_os = "macos")]
+    {
+        let output = Command::new("osascript")
+            .arg("-e")
+            .arg("tell application \"System Events\" to get name of first application process whose frontmost is true")
+            .output();
+        match output {
+            Ok(o) if o.status.success() => {
+                let name = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                ok(name)
+            }
+            Ok(o) => {
+                let stderr = String::from_utf8_lossy(&o.stderr);
+                err(format!("Failed to get frontmost app: {stderr}"))
+            }
+            Err(e) => err(format!("Failed to get frontmost app: {e}")),
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        err("Not supported on this platform".to_string())
+    }
+}
+
 /// Get the global mouse position (screen coordinates).
 #[derive(Serialize)]
 pub struct MousePosition {
