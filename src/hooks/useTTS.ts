@@ -38,9 +38,13 @@ export function useTTS() {
     const adapter = adapterRef.current
     if (!adapter) return
 
+    // Strip emoji so TTS doesn't read them out loud
+    const cleaned = text.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()
+    if (!cleaned) return
+
     setIsSpeaking(true)
     try {
-      await adapter.speak(text)
+      await adapter.speak(cleaned)
     } catch (e) {
       console.error('[TTS] speak error:', e)
     } finally {

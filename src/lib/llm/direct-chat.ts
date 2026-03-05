@@ -12,12 +12,12 @@ import type { AgentResponse } from '../types'
 export interface ChatTurn {
   userMessage: string
   assistantMessage: string
-  emotion: AgentResponse['emotion']
 }
 
 export interface ChatResult {
   text: string
-  response: AgentResponse
+  /** Provided by molroo engine when connected; undefined for direct LLM chat. */
+  response?: AgentResponse
 }
 
 export interface StreamChatOptions {
@@ -75,15 +75,7 @@ Respond naturally and warmly. Keep responses concise (1-2 sentences usually).`
         maxTokens: 150,
       })
 
-      return {
-        text: result.text,
-        response: {
-          emotion: {
-            discrete: { primary: 'contentment', intensity: 0.5 },
-            vad: { V: 0.3, A: 0.2, D: 0.3 },
-          },
-        },
-      }
+      return { text: result.text }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
       console.error('[DirectChat] Error calling LLM:', errorMsg)
@@ -123,15 +115,7 @@ Respond naturally and warmly. Keep responses concise (1-2 sentences usually).`
         onDelta: options?.onDelta,
       })
 
-      return {
-        text: result.text,
-        response: {
-          emotion: {
-            discrete: { primary: 'contentment', intensity: 0.5 },
-            vad: { V: 0.3, A: 0.2, D: 0.3 },
-          },
-        },
-      }
+      return { text: result.text }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
       console.error('[DirectChat] Stream error:', errorMsg)

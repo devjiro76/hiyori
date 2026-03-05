@@ -160,7 +160,7 @@ export function SettingsPanel({
               value={maxHistoryTurns}
               onChange={e => setMaxHistoryTurns(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
             />
-            <span className="settings-hint">LLM에 보낼 대화 턴 수 (1턴 = 질문+답변)</span>
+            <span className="settings-hint">Number of conversation turns sent to LLM (1 turn = question + answer)</span>
           </div>
         </div>
 
@@ -207,7 +207,7 @@ export function SettingsPanel({
                 <div className="settings-field">
                   <label>OpenAI API Key</label>
                   <input type="password" value={voiceApiKey} onChange={e => setVoiceApiKey(e.target.value)} placeholder="sk-..." />
-                  <span className="settings-hint">Whisper STT 사용. LLM과 같은 키 사용 가능.</span>
+                  <span className="settings-hint">Uses Whisper STT. Can share the same key as LLM.</span>
                 </div>
               )}
             </>

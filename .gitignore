@@ -21,5 +21,9 @@ public/live2dcubismcore.min.js
 # Claude Code
 .claude/
 
+# oh-my-claudecode
+.omc/
+src-tauri/.omc/
+
 # OS
 .DS_Store

@@ -25,8 +25,9 @@ function saveConfig(config: VoiceInputConfig) {
 // ── Web Speech API helpers ──
 
 function tryWebSpeech(): boolean {
-  const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-  return !!SR
+  // SpeechRecognition doesn't work in WKWebView (Tauri) and accessing it
+  // crashes the app in dev mode due to missing TCC entitlements (SIGABRT).
+  return false
 }
 
 function createRecognition(lang: string): any | null {

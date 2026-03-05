@@ -5,6 +5,7 @@ import {
   RESIZE_CORNER_HIDE_DELAY_MS,
   WINDOW_ASPECT_RATIO,
 } from '../lib/constants'
+import { openSettingsWindow } from '../lib/settings-window'
 
 export interface WindowBehaviorState {
   alwaysOnTop: boolean
@@ -24,12 +25,12 @@ export function useWindowBehavior(): WindowBehaviorState {
   const [showResizeCorners, setShowResizeCorners] = useState(false)
   const hideCornerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Cmd+, to open settings
+  // Cmd+, to open settings window
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === ',') {
         e.preventDefault()
-        setSettingsOpen(prev => !prev)
+        openSettingsWindow()
       }
     }
     document.addEventListener('keydown', onKeyDown)

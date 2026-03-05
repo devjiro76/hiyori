@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { TOOL_STATUS_CLEAR_DELAY_MS } from './lib/constants'
 import { hyoriCharacter } from './characters/hyori'
 import { Live2DViewer } from './components/Live2DViewer'
@@ -9,24 +9,11 @@ import { useSession } from './hooks/useSession'
 import { useWindowBehavior } from './hooks/useWindowBehavior'
 import { useTTS } from './hooks/useTTS'
 import { useVoiceInput } from './hooks/useVoiceInput'
-import { applyEmotionToLive2D } from './lib/live2d/emotion-controller'
-import type { Live2DController } from './hooks/useLive2D'
-import type { AgentResponse } from './lib/types'
 import type { ToolDef } from './lib/agent'
 import './App.css'
 
-const EMOTION_SYMBOLS: Record<string, string> = {
-  joy: '♪', contentment: '~', trust: '♡', calm: '―',
-  surprise: '?!', excitement: '☆', anger: '#', disgust: ';;;',
-  fear: '!!', anxiety: '...?', sadness: 'ㅠ', guilt: '...',
-  numbness: '. . .', shame: '///',
-}
-
 export default function App() {
-  const [controller, setController] = useState<Live2DController | null>(null)
-  const [emotionReaction, setEmotionReaction] = useState<string | null>(null)
   const [toolStatus, setToolStatus] = useState<{ name: string; descriptionKo: string; status: 'running' | 'done' | 'error' } | null>(null)
-  const prevEmotionRef = useRef<string | null>(null)
 
   const {
     showResizeCorners, setInputFocused,
@@ -67,7 +54,6 @@ export default function App() {
     if (session.status !== 'active' || isProcessing) return
     const result = await sendMessage(text)
     if (result && 'result' in result) {
-      handleTurnResponse(result.result.response)
       speak(result.displayText)
     }
   }, [session.status, isProcessing, sendMessage, speak])
@@ -97,16 +83,6 @@ export default function App() {
     return () => window.removeEventListener('storage', onStorage)
   }, [setLlmConfig, setTtsConfig, setVoiceConfig, handleToggleAlwaysOnTop])
 
-  const handleTurnResponse = useCallback((response: AgentResponse) => {
-    if (!controller) return
-    const { newEmotion } = applyEmotionToLive2D(controller, response, prevEmotionRef.current)
-
-    if (prevEmotionRef.current && prevEmotionRef.current !== newEmotion) {
-      setEmotionReaction(EMOTION_SYMBOLS[newEmotion] ?? '!')
-    }
-    prevEmotionRef.current = newEmotion
-  }, [controller])
-
   return (
     <div className="app-root">
       {/* Resize handle — bottom-right only */}
@@ -114,16 +90,12 @@ export default function App() {
 
       <Live2DViewer
         character={hyoriCharacter}
-        onReady={setController}
       />
       <ChatBubble
         session={session}
         isProcessing={isProcessing}
         streamingText={streamingText}
         onSend={sendMessage}
-        onTurnResponse={handleTurnResponse}
-        emotionReaction={emotionReaction}
-        onEmotionReactionDone={() => setEmotionReaction(null)}
         toolStatus={toolStatus}
         lastToolResults={lastToolResults}
         onInputFocusChange={setInputFocused}

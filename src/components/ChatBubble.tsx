@@ -1,11 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import './ChatBubble.css'
 import type { SessionState } from '../hooks/useSession'
-import type { AgentResponse } from '../lib/types'
 import type { ToolResult } from '../lib/agent'
 import { useChatHistory } from '../hooks/useChatHistory'
 import { SpeechBubble } from './SpeechBubble'
-import { EmotionReaction } from './EmotionReaction'
 import { ToolStatusIndicator } from './ToolStatusIndicator'
 import { SessionErrorOverlay } from './SessionErrorOverlay'
 import { InputBar } from './InputBar'
@@ -15,12 +13,9 @@ interface ChatBubbleProps {
   isProcessing: boolean
   streamingText?: string | null
   onSend: (message: string) => Promise<{
-    result: { text: string; response: AgentResponse }
+    result: { text: string }
     displayText: string
   } | { error: string } | null>
-  onTurnResponse: (response: AgentResponse) => void
-  emotionReaction?: string | null
-  onEmotionReactionDone?: () => void
   toolStatus?: { name: string; descriptionKo: string; status: 'running' | 'done' | 'error' } | null
   lastToolResults?: ToolResult[]
   onInputFocusChange?: (focused: boolean) => void
@@ -35,9 +30,6 @@ export function ChatBubble({
   isProcessing,
   streamingText,
   onSend,
-  onTurnResponse,
-  emotionReaction,
-  onEmotionReactionDone,
   toolStatus,
   lastToolResults,
   onInputFocusChange,
@@ -53,23 +45,14 @@ export function ChatBubble({
   const [floatingText, setFloatingText] = useState<string | null>(null)
   const [floatingDuration, setFloatingDuration] = useState(3.5)
   const floatingTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const reactionTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // Auto-scroll chat history to bottom
   useEffect(() => {
-    // Small delay to ensure DOM is rendered after historyMode change
     requestAnimationFrame(() => {
       const el = historyListRef.current
       if (el) el.scrollTop = el.scrollHeight
     })
   }, [messages, isProcessing, historyMode])
-
-  useEffect(() => {
-    if (!emotionReaction) return
-    if (reactionTimerRef.current) clearTimeout(reactionTimerRef.current)
-    reactionTimerRef.current = setTimeout(() => onEmotionReactionDone?.(), 1800)
-    return () => { if (reactionTimerRef.current) clearTimeout(reactionTimerRef.current) }
-  }, [emotionReaction, onEmotionReactionDone])
 
   async function handleSend() {
     if (!input.trim() || isProcessing || session.status !== 'active') return
@@ -91,7 +74,6 @@ export function ChatBubble({
       }
       await addMessage({ id: crypto.randomUUID(), role: 'assistant', text: result.displayText })
       showFloating(result.displayText)
-      onTurnResponse(result.result.response)
       onSpeak?.(result.displayText)
     }
   }
@@ -113,10 +95,6 @@ export function ChatBubble({
     <>
       {floatingText && (
         <SpeechBubble key={floatingText} text={floatingText} durationSeconds={floatingDuration} />
-      )}
-
-      {emotionReaction && (
-        <EmotionReaction key={emotionReaction + Date.now()} symbol={emotionReaction} />
       )}
 
       {isListening && (
