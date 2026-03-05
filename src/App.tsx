@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { TOOL_STATUS_CLEAR_DELAY_MS } from './lib/constants'
 import { hyoriCharacter } from './characters/hyori'
 import { Live2DViewer } from './components/Live2DViewer'
@@ -9,11 +9,24 @@ import { useSession } from './hooks/useSession'
 import { useWindowBehavior } from './hooks/useWindowBehavior'
 import { useTTS } from './hooks/useTTS'
 import { useVoiceInput } from './hooks/useVoiceInput'
+import { applyEmotionToLive2D } from './lib/live2d/emotion-controller'
+import type { Live2DController } from './hooks/useLive2D'
+import type { AgentResponse } from './lib/types'
 import type { ToolDef } from './lib/agent'
 import './App.css'
 
+const EMOTION_SYMBOLS: Record<string, string> = {
+  joy: '♪', contentment: '~', trust: '♡', calm: '―',
+  surprise: '?!', excitement: '☆', anger: '#', disgust: ';;;',
+  fear: '!!', anxiety: '...?', sadness: 'ㅠ', guilt: '...',
+  numbness: '. . .', shame: '///',
+}
+
 export default function App() {
+  const [controller, setController] = useState<Live2DController | null>(null)
+  const [emotionReaction, setEmotionReaction] = useState<string | null>(null)
   const [toolStatus, setToolStatus] = useState<{ name: string; descriptionKo: string; status: 'running' | 'done' | 'error' } | null>(null)
+  const prevEmotionRef = useRef<string | null>(null)
 
   const {
     showResizeCorners, setInputFocused,
@@ -42,7 +55,7 @@ export default function App() {
 
   const {
     session, isProcessing, streamingText,
-    setLlmConfig,
+    setLlmConfig, setMolrooConfig,
     lastToolResults,
     sendMessage,
     createSession,
@@ -50,13 +63,23 @@ export default function App() {
 
   const { setTtsConfig, speak } = useTTS()
 
+  const handleTurnResponse = useCallback((response: AgentResponse) => {
+    if (!controller) return
+    const { newEmotion } = applyEmotionToLive2D(controller, response, prevEmotionRef.current)
+    if (prevEmotionRef.current && prevEmotionRef.current !== newEmotion) {
+      setEmotionReaction(EMOTION_SYMBOLS[newEmotion] ?? '!')
+    }
+    prevEmotionRef.current = newEmotion
+  }, [controller])
+
   const handleVoiceTranscript = useCallback(async (text: string) => {
     if (session.status !== 'active' || isProcessing) return
     const result = await sendMessage(text)
     if (result && 'result' in result) {
+      if (result.result.response) handleTurnResponse(result.result.response)
       speak(result.displayText)
     }
-  }, [session.status, isProcessing, sendMessage, speak])
+  }, [session.status, isProcessing, sendMessage, speak, handleTurnResponse])
 
   const { setVoiceConfig, isListening } = useVoiceInput(handleVoiceTranscript)
 
@@ -75,13 +98,16 @@ export default function App() {
       if (e.key === 'tauri-hyori-voice-config' && e.newValue) {
         try { setVoiceConfig(JSON.parse(e.newValue)) } catch { /* ignore */ }
       }
+      if (e.key === 'tauri-hyori-molroo-config' && e.newValue) {
+        try { setMolrooConfig(JSON.parse(e.newValue)) } catch { /* ignore */ }
+      }
       if (e.key === 'tauri-hyori-always-on-top' && e.newValue) {
         try { handleToggleAlwaysOnTop(JSON.parse(e.newValue)) } catch { /* ignore */ }
       }
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
-  }, [setLlmConfig, setTtsConfig, setVoiceConfig, handleToggleAlwaysOnTop])
+  }, [setLlmConfig, setTtsConfig, setVoiceConfig, setMolrooConfig, handleToggleAlwaysOnTop])
 
   return (
     <div className="app-root">
@@ -90,12 +116,16 @@ export default function App() {
 
       <Live2DViewer
         character={hyoriCharacter}
+        onReady={setController}
       />
       <ChatBubble
         session={session}
         isProcessing={isProcessing}
         streamingText={streamingText}
         onSend={sendMessage}
+        onTurnResponse={handleTurnResponse}
+        emotionReaction={emotionReaction}
+        onEmotionReactionDone={() => setEmotionReaction(null)}
         toolStatus={toolStatus}
         lastToolResults={lastToolResults}
         onInputFocusChange={setInputFocused}

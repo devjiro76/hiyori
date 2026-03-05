@@ -2,6 +2,8 @@ import { useState, useCallback, useRef } from 'react'
 import { createDirectChat, type DirectChat, type ChatResult } from '../lib/llm/direct-chat'
 import type { LlmConfig } from '../lib/llm/adapter'
 import { routeAgentRequest, type ConfirmFn, type ToolStatusFn, type ToolResult } from '../lib/agent'
+import { createMolrooClient, type MolrooClient } from '../lib/molroo/client'
+import type { MolrooConfig } from '../components/SettingsPanel'
 import { DEFAULT_MAX_HISTORY_TURNS } from '../lib/constants'
 
 export type { LlmConfig } from '../lib/llm/adapter'
@@ -48,6 +50,16 @@ function saveLlmConfig(config: LlmConfig) {
   localStorage.setItem(LS_KEY, JSON.stringify(config))
 }
 
+const LS_MOLROO = 'tauri-hyori-molroo-config'
+
+function loadMolrooConfig(): MolrooConfig {
+  try {
+    const raw = localStorage.getItem(LS_MOLROO)
+    if (raw) return JSON.parse(raw) as MolrooConfig
+  } catch { /* ignore */ }
+  return { enabled: false }
+}
+
 export function useSession(
   confirmFn?: ConfirmFn,
   onToolStatus?: ToolStatusFn,
@@ -58,13 +70,21 @@ export function useSession(
   const [isProcessing, setIsProcessing] = useState(false)
   const [lastToolResults, setLastToolResults] = useState<ToolResult[]>([])
   const [streamingText, setStreamingText] = useState<string | null>(null)
+  const [molrooConfig, setMolrooConfigState] = useState<MolrooConfig>(loadMolrooConfig)
   const turnIdRef = useRef(0)
   const chatRef = useRef<DirectChat | null>(null)
+  const molrooRef = useRef<MolrooClient | null>(null)
+  const molrooKeyRef = useRef<string>('')
   const appliedConfigRef = useRef<string>('')
 
   const setLlmConfig = useCallback((config: LlmConfig) => {
     setLlmConfigState(config)
     saveLlmConfig(config)
+  }, [])
+
+  const setMolrooConfig = useCallback((config: MolrooConfig) => {
+    setMolrooConfigState(config)
+    localStorage.setItem(LS_MOLROO, JSON.stringify(config))
   }, [])
 
   const createSession = useCallback(async () => {
@@ -133,6 +153,20 @@ export function useSession(
       })
       setStreamingText(null)
 
+      // Molroo emotion processing (non-blocking)
+      if (molrooConfig.enabled && molrooConfig.apiKey) {
+        try {
+          if (!molrooRef.current || molrooKeyRef.current !== molrooConfig.apiKey) {
+            molrooRef.current = await createMolrooClient(molrooConfig.apiKey)
+            molrooKeyRef.current = molrooConfig.apiKey
+          }
+          const agentResponse = await molrooRef.current.perceive(message, chatResult.text)
+          chatResult.response = agentResponse
+        } catch (err) {
+          console.warn('[useSession] Molroo perceive failed:', err)
+        }
+      }
+
       const entry: TurnEntry = {
         id: ++turnIdRef.current,
         userMessage: message,
@@ -163,6 +197,8 @@ export function useSession(
     session,
     llmConfig,
     setLlmConfig,
+    molrooConfig,
+    setMolrooConfig,
     turnHistory,
     isProcessing,
     streamingText,

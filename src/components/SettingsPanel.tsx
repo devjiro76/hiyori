@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react'
+import { open } from '@tauri-apps/plugin-shell'
 import { LLM_PROVIDERS } from '../lib/llm/providers'
 import type { LlmConfig } from '../lib/llm/adapter'
 import type { TTSConfig, TTSProvider } from '../lib/tts/tts-adapter'
 import type { VoiceInputConfig } from '../hooks/useVoiceInput'
 import { DEFAULT_MAX_HISTORY_TURNS } from '../lib/constants'
 import './SettingsPanel.css'
+
+export interface MolrooConfig {
+  enabled: boolean
+  apiKey?: string
+}
 
 const TTS_PROVIDERS: { id: TTSProvider; name: string }[] = [
   { id: 'none', name: 'Off' },
@@ -24,6 +30,8 @@ interface SettingsPanelProps {
   voiceConfig?: VoiceInputConfig
   onSaveVoice?: (config: VoiceInputConfig) => void
   voiceSupported?: boolean
+  molrooConfig?: MolrooConfig
+  onSaveMolroo?: (config: MolrooConfig) => void
 }
 
 export function SettingsPanel({
@@ -37,6 +45,8 @@ export function SettingsPanel({
   voiceConfig,
   onSaveVoice,
   voiceSupported,
+  molrooConfig,
+  onSaveMolroo,
 }: SettingsPanelProps) {
   const [provider, setProvider] = useState(llmConfig.provider)
   const [model, setModel] = useState(llmConfig.model ?? '')
@@ -53,6 +63,10 @@ export function SettingsPanel({
   // Voice input state
   const [voiceEnabled, setVoiceEnabled] = useState(voiceConfig?.enabled ?? false)
   const [voiceApiKey, setVoiceApiKey] = useState(voiceConfig?.apiKey ?? '')
+
+  // Molroo state
+  const [molrooEnabled, setMolrooEnabled] = useState(molrooConfig?.enabled ?? false)
+  const [molrooApiKey, setMolrooApiKey] = useState(molrooConfig?.apiKey ?? '')
 
   const providerDef = LLM_PROVIDERS.find(p => p.id === provider)
 
@@ -71,6 +85,7 @@ export function SettingsPanel({
     onSave({ provider, model, apiKey: apiKey || undefined, baseUrl: baseUrl || undefined, maxHistoryTurns })
     onSaveTts?.({ provider: ttsProvider, apiKey: ttsApiKey || undefined, voice: ttsVoice || undefined, model: ttsModel || undefined })
     onSaveVoice?.({ enabled: voiceEnabled, apiKey: voiceApiKey || undefined })
+    onSaveMolroo?.({ enabled: molrooEnabled, apiKey: molrooApiKey || undefined })
     onClose()
   }
 
@@ -162,6 +177,25 @@ export function SettingsPanel({
             />
             <span className="settings-hint">Number of conversation turns sent to LLM (1 turn = question + answer)</span>
           </div>
+        </div>
+
+        {/* Emotional Engine (Molroo) */}
+        <div className="settings-section">
+          <h3>Emotional Engine</h3>
+          <label className="settings-checkbox">
+            <input type="checkbox" checked={molrooEnabled} onChange={e => setMolrooEnabled(e.target.checked)} />
+            <span>Enable emotional responses</span>
+          </label>
+          {molrooEnabled && (
+            <div className="settings-field">
+              <label>API Key</label>
+              <input type="password" value={molrooApiKey} onChange={e => setMolrooApiKey(e.target.value)} placeholder="mlr-..." />
+              <span className="settings-hint">
+                Get your key at{' '}
+                <a href="#" onClick={e => { e.preventDefault(); open('https://molroo.io/') }} className="settings-link">molroo.io</a>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* TTS Section */}

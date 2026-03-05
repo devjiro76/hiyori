@@ -114,6 +114,16 @@
   margin-top: 4px;
 }
 
+.settings-link {
+  color: rgba(130, 180, 255, 0.9);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.settings-link:hover {
+  text-decoration: underline;
+}
+
 /* ── Checkbox ── */
 .settings-checkbox {
   display: flex;

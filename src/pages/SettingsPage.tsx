@@ -4,12 +4,13 @@ import { LLM_PROVIDERS } from '../lib/llm/providers'
 import type { LlmConfig } from '../lib/llm/adapter'
 import type { TTSConfig } from '../lib/tts/tts-adapter'
 import type { VoiceInputConfig } from '../hooks/useVoiceInput'
-import { SettingsPanel } from '../components/SettingsPanel'
+import { SettingsPanel, type MolrooConfig } from '../components/SettingsPanel'
 import '../index.css'
 
 const LS_LLM = 'tauri-hyori-llm-config'
 const LS_TTS = 'tauri-hyori-tts-config'
 const LS_VOICE = 'tauri-hyori-voice-config'
+const LS_MOLROO = 'tauri-hyori-molroo-config'
 const LS_AOT = 'tauri-hyori-always-on-top'
 
 function load<T>(key: string, fallback: T): T {
@@ -30,6 +31,9 @@ export function SettingsPage() {
   const [voiceConfig] = useState<VoiceInputConfig>(() =>
     load(LS_VOICE, { enabled: false })
   )
+  const [molrooConfig] = useState<MolrooConfig>(() =>
+    load(LS_MOLROO, { enabled: false })
+  )
   const [alwaysOnTop] = useState(() => load(LS_AOT, false))
   const voiceSupported = !!navigator.mediaDevices?.getUserMedia
 
@@ -49,6 +53,10 @@ export function SettingsPage() {
     localStorage.setItem(LS_VOICE, JSON.stringify(config))
   }
 
+  function handleSaveMolroo(config: MolrooConfig) {
+    localStorage.setItem(LS_MOLROO, JSON.stringify(config))
+  }
+
   function handleToggleAlwaysOnTop(value: boolean) {
     localStorage.setItem(LS_AOT, JSON.stringify(value))
   }
@@ -65,6 +73,8 @@ export function SettingsPage() {
       voiceConfig={voiceConfig}
       onSaveVoice={handleSaveVoice}
       voiceSupported={voiceSupported}
+      molrooConfig={molrooConfig}
+      onSaveMolroo={handleSaveMolroo}
     />
   )
 }
