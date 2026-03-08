@@ -27,3 +27,5 @@ src-tauri/.omc/
 
 # OS
 .DS_Store
+.serena/
+.wrangler/
